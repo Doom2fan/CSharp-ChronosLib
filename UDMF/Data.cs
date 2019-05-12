@@ -23,33 +23,21 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace GZDoomLib.UDMF {
-    public class UDMFBlock { }
-
-    public class UDMFVertex : UDMFBlock {
-
-    }
-    public class UDMFLinedef {
-
-    }
-    public class UDMFSidedef {
-
-    }
-    public class UDMFSector {
-
-    }
-    public class UDMFThing {
-
+    public class UDMFBlockList<T> : List<T>
+        where T: IUDMFBlock {
+        public UDMFBlockList () : base () {
+        }
     }
 
-    public class UDMFParsedMapDataStandard : UDMFParsedMapData {
-
+    public interface IUDMFBlock {
+        Dictionary<string, string> UnknownAssignments { get; set; }
+    }
+    public class UDMFUnknownBlock : IUDMFBlock {
+        public Dictionary<string, string> UnknownAssignments { get; set; }
     }
 
-    public class UDMFParsedMapData {
-        [UDMFDataAttribute ("namespace")]
-        public string Namespace { get; set; }
-
-        public Dictionary<string, string> GlobalAssignments { get; set; }
-        public Dictionary<string, Dictionary<string, string>> CustomBlocks { get; set; }
+    public abstract class UDMFParsedMapData {
+        public Dictionary<string, string> UnknownGlobalAssignments { get; set; } = new Dictionary<string, string> ();
+        public List<Tuple <string, UDMFUnknownBlock>> UnknownBlocks { get; set; } = new List<Tuple<string, UDMFUnknownBlock>> ();
     }
 }

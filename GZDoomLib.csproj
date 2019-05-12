@@ -87,8 +87,9 @@
   <ItemGroup>
     <Compile Include="UDMF\Data.cs" />
     <Compile Include="UDMF\Parser.cs" />
-    <Compile Include="UDMF\ParseTree.cs" />
     <Compile Include="UDMF\Scanner.cs" />
+    <Compile Include="UDMF\Standards\StandardUDMF.cs" />
+    <Compile Include="UDMF\Standards\ZDoomUDMF.cs" />
     <Compile Include="UDMF\UDMF.cs" />
     <Compile Include="WAD.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

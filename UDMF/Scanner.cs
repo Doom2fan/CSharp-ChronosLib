@@ -27,7 +27,7 @@ using System.Xml.Serialization;
 namespace GZDoomLib.UDMF.Internal {
     #region Scanner
 
-    public class UDMFScanner {
+    internal class UDMFScanner {
         protected StringBuilder sb;
 
         public TextReader Reader { get; protected set; }
@@ -353,7 +353,6 @@ namespace GZDoomLib.UDMF.Internal {
     #region Token
 
     public enum UDMFTokenType {
-
         // Non-terminal tokens
         _NONE_ = 0,
         _UNDETERMINED_ = 1,
@@ -383,6 +382,23 @@ namespace GZDoomLib.UDMF.Internal {
     }
 
     public class UDMFToken {
+        public static string TokenTypeToString (UDMFTokenType val) {
+            switch (val) {
+                case UDMFTokenType._NONE_:         return "None";
+                case UDMFTokenType._UNDETERMINED_: return "Undetermined token";
+                case UDMFTokenType.IDENTIFIER:     return "Identifier";
+                case UDMFTokenType.INTEGER:        return "Integer";
+                case UDMFTokenType.FLOAT:          return "Float";
+                case UDMFTokenType.QUOTED_STRING:  return "String";
+                case UDMFTokenType.KEYWORD:        return "Keyword";
+                case UDMFTokenType.BROPEN:         return "'{'";
+                case UDMFTokenType.BRCLOSE:        return "'}'";
+                case UDMFTokenType.EQSIGN:         return "'='";
+                case UDMFTokenType.SEMICOLON:      return "';'";
+                default: return "UNDETERMINED";
+            }
+        }
+
         public int StartPos { get; set; }
         public int EndPos { get; set; }
         public int Line { get; set; }

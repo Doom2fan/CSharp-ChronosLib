@@ -24,7 +24,32 @@ using System.Linq;
 using System.Text;
 
 namespace GZDoomLib.UDMF {
-    [AttributeUsage (AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true)]
+    public class UDMFParseError {
+        public int Code { get; }
+        public int Line { get; }
+        public int Column { get; }
+        public int Position { get; }
+        public int Length { get; }
+        public string Message { get; }
+
+        // just for the sake of serialization
+        public UDMFParseError () {
+        }
+
+        public UDMFParseError (string message, int code, UDMFToken tok) : this (message, code, tok.Line, tok.Column, tok.StartPos, tok.Length) {
+        }
+
+        public UDMFParseError (string message, int code, int line, int col, int pos, int length) {
+            Message = message;
+            Code = code;
+            Line = line;
+            Column = col;
+            Position = pos;
+            Length = length;
+        }
+    }
+
+    [AttributeUsage (AttributeTargets.Field | AttributeTargets.Property)]
     public class UDMFDataAttribute : Attribute {
         private string identifier;
 
@@ -35,29 +60,47 @@ namespace GZDoomLib.UDMF {
         public virtual string Identifier { get => identifier; }
     }
 
-    public class UDMFParser {
-        protected UDMFParser_Internal parser;
+    public class UDMFParser<T>
+        where T : UDMFParsedMapData {
+        protected Type dataType = typeof (T);
+        internal UDMFParser_Internal parser;
+        public List<UDMFParseError> Errors { get; protected set; }
 
         public UDMFParser () {
             parser = new UDMFParser_Internal (new UDMFScanner ());
         }
 
-        public long Parse (string input) {
+        protected T ParseInternal (TextReader reader) {
+            parser.Errors.Clear ();
+            T data = (T) parser.Parse (reader, dataType);
+            Errors = parser.Errors;
+
+            return data;
+        }
+
+        public T Parse (TextReader input) {
             if (input is null)
                 throw new ArgumentNullException (nameof (input));
 
-            var sw = new System.Diagnostics.Stopwatch ();
-            sw.Restart ();
-            var data = parser.Parse (input);
-            long time = sw.ElapsedTicks;
-            sw.Stop ();
+            return ParseInternal (input);
+        }
 
-            foreach (var error in parser.Errors)
-                Console.WriteLine ($"Message: \"{error.Message}\", Line: \"{error.Line}\", Column: {error.Column}");
+        public T Parse (Stream input) {
+            if (input is null)
+                throw new ArgumentNullException (nameof (input));
+            if (!input.CanRead)
+                throw new ArgumentException ("Input stream must be readable.", nameof (input));
 
-            //Console.WriteLine ($"Vertices: {data.Vertices.Count}, Linedefs: {data.Linedefs.Count}, Sidedefs: {data.Sidedefs.Count}, Sectors: {data.Sectors.Count}, Things: {data.Things.Count}");
+            using (var reader = new StreamReader (input))
+                return ParseInternal (reader);
+        }
 
-            return time;
+        public T Parse (string input) {
+            if (input is null)
+                throw new ArgumentNullException (nameof (input));
+
+            using (var reader = new StringReader (input))
+                return ParseInternal (reader);
         }
     }
 }

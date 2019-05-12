@@ -19,182 +19,327 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Reflection;
 
 namespace GZDoomLib.UDMF.Internal {
     #region Parser
 
-    public partial class UDMFParser_Internal {
+    internal sealed class UDMFParser_Internal {
+        private static Dictionary<Type, ParserInfo> parserInfoList = new Dictionary<Type, ParserInfo> ();
         private UDMFScanner scanner;
-        public UDMFParseErrors Errors { get; set; }
+        public List<UDMFParseError> Errors { get; set; }
 
         public UDMFParser_Internal (UDMFScanner scanner) {
             this.scanner = scanner;
-            this.Errors = new UDMFParseErrors ();
+            this.Errors = new List<UDMFParseError> ();
         }
 
-        public List<Tuple<UDMFToken, object>> Parse (string input) {
-            using (var reader = new StringReader (input))
-                return Parse (reader);
+        private static bool IsUDMFType (Type type) {
+            switch (Type.GetTypeCode (type)) {
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.String:
+                case TypeCode.Boolean:
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
-        public List<Tuple<UDMFToken, object>> Parse (Stream input) {
-            using (var reader = new StreamReader (input))
-                return Parse (reader);
+        private static Action<object, object> CreateAddDelegate (Type typeParam) {
+            var addMethod = typeParam.GetMethod ("Add");
+            return new Action<object, object> ((list, val) => {
+                addMethod.Invoke (list, new [] { val });
+            });
         }
 
-        public List<Tuple<UDMFToken, object>> Parse (TextReader reader) {
+        private static Action<object, object> CreateSetterDelegate (PropertyInfo prop) {
+            return new Action<object, object> ((data, val) => {
+                prop.SetValue (data, val);
+            });
+        }
+
+        private class ParserInfo {
+            public class BlockInfo {
+                public Type blockType;
+                public PropertyInfo propInfo;
+                public Action<object, object> addMethod;
+                public Dictionary<string, Tuple<Type, Action<object, object>>> assignments;
+            }
+
+            public readonly Dictionary<string, BlockInfo> blocks;
+            public readonly Dictionary<string, Tuple<Type, Action<object, object>>> globalAssignments;
+
+            public ParserInfo (Type dataType) {
+                var udmfDataInfo = dataType.GetProperties ();
+
+                blocks = new Dictionary<string, BlockInfo> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
+                globalAssignments = new Dictionary<string, Tuple<Type, Action<object, object>>> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
+
+                foreach (var prop in udmfDataInfo) {
+                    var dataAttr = prop.GetCustomAttribute<UDMFDataAttribute> ();
+                    var type = prop.PropertyType;
+
+                    if (dataAttr is null)
+                        continue;
+
+                    if (IsUDMFType (type)) {
+                        globalAssignments.Add (
+                            dataAttr.Identifier,
+                            new Tuple<Type, Action<object, object>> (type, CreateSetterDelegate (prop))
+                        );
+                    } else if (type.IsGenericType && type.GetGenericTypeDefinition () == typeof (UDMFBlockList<>)) {
+                        var blockInfo = new BlockInfo ();
+                        var blockType = type.GetGenericArguments () [0];
+
+                        blockInfo.blockType = blockType;
+                        blockInfo.propInfo = prop;
+                        blockInfo.addMethod = CreateAddDelegate (type);
+                        GetBlockInfo (type, blockInfo);
+
+                        blocks.Add (dataAttr.Identifier, blockInfo);
+                    }
+                }
+            }
+
+            private void GetBlockInfo (Type type, BlockInfo blockInfo) {
+                var udmfDataInfo = type.GetProperties ();
+
+                blockInfo.assignments = new Dictionary<string, Tuple<Type, Action<object, object>>> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
+
+                foreach (var prop in udmfDataInfo) {
+                    var dataAttr = prop.GetCustomAttribute<UDMFDataAttribute> ();
+                    var propType = prop.PropertyType;
+
+                    if (dataAttr is null)
+                        continue;
+
+                    blockInfo.assignments.Add (
+                        dataAttr.Identifier,
+                        new Tuple<Type, Action<object, object>> (propType, CreateSetterDelegate (prop))
+                    );
+                }
+            }
+
+            public void InitializeDataClass (UDMFParsedMapData data) {
+                foreach (var block in blocks.Values) {
+                    var propVal = block.propInfo.GetValue (data);
+
+                    if (propVal is null) {
+                        propVal = Activator.CreateInstance (block.propInfo.PropertyType);
+                        block.propInfo.SetValue (data, propVal);
+                    }
+                }
+            }
+        }
+
+        private ParserInfo GetParserInfo (Type dataType) {
+            ParserInfo info;
+
+            if (!parserInfoList.TryGetValue (dataType, out info)) {
+                info = new ParserInfo (dataType);
+                parserInfoList.Add (dataType, info);
+            }
+
+            return info;
+        }
+
+        public UDMFParsedMapData Parse (TextReader reader, Type dataType) {
             scanner.Init (reader);
 
-            var ret = ParseGlobal_Expr_List ();
+            GetParserInfo (dataType);
+
+            var data = (UDMFParsedMapData) Activator.CreateInstance (dataType);
+            var info = GetParserInfo (dataType);
+            info.InitializeDataClass (data);
+
+            ParseGlobal_Expr_List (data, info);
 
             scanner.Reset ();
 
-            return ret;
+            return data;
         }
 
-        private List<Tuple<UDMFToken, object>> ParseGlobal_Expr_List () {
-            var expressions = new List<Tuple<UDMFToken, object>> ();
-
+        private void ParseGlobal_Expr_List (UDMFParsedMapData dataClass, ParserInfo info) {
             UDMFToken tok = scanner.LookAhead ();
             while (tok.Type == UDMFTokenType.IDENTIFIER) {
-                var data = ParseGlobal_Expr ();
-
-                expressions.Add (new Tuple<UDMFToken, object> (tok, data));
+                ParseGlobal_Expr (dataClass, info);
 
                 tok = scanner.LookAhead ();
             }
-
-            return expressions;
         }
 
-        private Tuple<UDMFToken, object> ParseGlobal_Expr () {
+        private void ParseGlobal_Expr (UDMFParsedMapData dataClass, ParserInfo info) {
             UDMFToken tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.IDENTIFIER) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.IDENTIFIER.ToString (), 0x1001, tok));
-                return null;
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.IDENTIFIER), 0x1001, tok));
+                return;
             }
 
             var ident = tok;
-            object data;
 
             tok = scanner.LookAhead ();
             switch (tok.Type) {
                 case UDMFTokenType.BROPEN:
-                    data = ParseBlock ();
+                    if (info.blocks.ContainsKey (ident.Text))
+                        ParseBlock (dataClass, ident.Text, info.blocks [ident.Text]);
+                    else
+                        ParseBlock (dataClass, ident.Text, null);
                     break;
                 case UDMFTokenType.EQSIGN:
-                    data = ParseAssignment_Expr ();
+                    if (info.globalAssignments.ContainsKey (ident.Text))
+                        ParseAssignment_Expr (dataClass, info.globalAssignments [ident.Text]);
+                    else {
+                        var val = ParseAssignment_Expr (dataClass, null);
+                        dataClass.UnknownGlobalAssignments.Add (ident.Text, val.Text);
+                    }
                     break;
                 default:
                     Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found.", 0x0002, tok));
-                    return null;
+                    return;
             }
 
-            return new Tuple<UDMFToken, object> (ident, data);
+            return;
         }
 
-        private List<Tuple<UDMFToken, UDMFToken>> ParseBlock () {
+        private void ParseBlock (UDMFParsedMapData dataClass, string ident, ParserInfo.BlockInfo info) {
             UDMFToken tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.BROPEN) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.BROPEN.ToString (), 0x1001, tok));
-                return null;
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.BROPEN), 0x1001, tok));
+                return;
             }
 
-            var value = ParseExpr_List ();
+            IUDMFBlock block;
+            if (info != null) {
+                block = (IUDMFBlock) Activator.CreateInstance (info.blockType);
+                info.addMethod (info.propInfo.GetValue (dataClass), block);
+            } else {
+                var newBlock = new UDMFUnknownBlock ();
+                block = newBlock;
+                dataClass.UnknownBlocks.Add (new Tuple<string, UDMFUnknownBlock> (ident, newBlock));
+            }
+
+            ParseExpr_List (block, info);
 
             tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.BRCLOSE) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.BRCLOSE.ToString (), 0x1001, tok));
-                return null;
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.BRCLOSE), 0x1001, tok));
+                return;
             }
-
-            return value;
         }
 
-        private List<Tuple<UDMFToken, UDMFToken>> ParseExpr_List () {
-            var expressions = new List<Tuple<UDMFToken, UDMFToken>> ();
-
+        private void ParseExpr_List (IUDMFBlock block, ParserInfo.BlockInfo info) {
             UDMFToken tok = scanner.LookAhead ();
             while (tok.Type == UDMFTokenType.IDENTIFIER) {
                 tok = scanner.Scan ();
                 if (tok.Type != UDMFTokenType.IDENTIFIER) {
-                    Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.IDENTIFIER.ToString (), 0x1001, tok));
-                    return null;
+                    Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.IDENTIFIER), 0x1001, tok));
+                    return;
                 }
 
-                var value = ParseAssignment_Expr ();
-                expressions.Add (new Tuple<UDMFToken, UDMFToken> (tok, value));
+                if (info != null && info.assignments.ContainsKey (tok.Text))
+                    ParseAssignment_Expr (block, info.assignments [tok.Text]);
+                else
+                    ParseAssignment_Expr (block, null);
 
                 tok = scanner.LookAhead ();
             }
-
-            return expressions;
         }
 
-        private UDMFToken ParseAssignment_Expr () {
+        private UDMFToken ParseAssignment_Expr (object block, Tuple<Type, Action<object, object>> data) {
             UDMFToken tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.EQSIGN) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.EQSIGN.ToString (), 0x1001, tok));
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.EQSIGN), 0x1001, tok));
                 return null;
             }
 
-            var value = ParseValue ();
+            var valTok = scanner.Scan ();
+            if (data != null) {
+                object val = null;
+
+                switch (Type.GetTypeCode (data.Item1)) {
+                    case TypeCode.Boolean:
+                        if (valTok.Text.Equals ("true", StringComparison.InvariantCultureIgnoreCase))
+                            val = true;
+                        else if (valTok.Text.Equals ("false", StringComparison.InvariantCultureIgnoreCase))
+                            val = false;
+                        else {
+                            Errors.Add (new UDMFParseError ("Expected bool, got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        break;
+
+                    case TypeCode.Int32:
+                        if (valTok.Type != UDMFTokenType.INTEGER) {
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        val = int.Parse (valTok.Text, CultureInfo.InvariantCulture);
+                        break;
+                    case TypeCode.Int64:
+                        if (valTok.Type != UDMFTokenType.INTEGER) {
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        val = long.Parse (valTok.Text, CultureInfo.InvariantCulture);
+                        break;
+                    case TypeCode.UInt32:
+                        if (valTok.Type != UDMFTokenType.INTEGER) {
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        val = uint.Parse (valTok.Text, CultureInfo.InvariantCulture);
+                        break;
+                    case TypeCode.UInt64:
+                        if (valTok.Type != UDMFTokenType.INTEGER) {
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        val = ulong.Parse (valTok.Text, CultureInfo.InvariantCulture);
+                        break;
+
+                    case TypeCode.Single:
+                        if (valTok.Type != UDMFTokenType.FLOAT) {
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        val = float.Parse (valTok.Text, CultureInfo.InvariantCulture);
+                        break;
+                    case TypeCode.Double:
+                        if (valTok.Type != UDMFTokenType.FLOAT) {
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        val = double.Parse (valTok.Text, CultureInfo.InvariantCulture);
+                        break;
+
+                    case TypeCode.String:
+                        if (valTok.Type != UDMFTokenType.QUOTED_STRING) {
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.QUOTED_STRING) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            break;
+                        }
+                        val = valTok.Text;
+                        break;
+
+                    default:
+                        throw new NotImplementedException ();
+                }
+
+                if (val != null)
+                    data.Item2 (block, val);
+            }
 
             tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.SEMICOLON) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.SEMICOLON.ToString (), 0x1001, tok));
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.SEMICOLON), 0x1001, tok));
                 return null;
-            }
-
-            return value;
-        }
-
-        private UDMFToken ParseValue () {
-            UDMFToken tok = scanner.LookAhead ();
-
-            switch (tok.Type) {
-                case UDMFTokenType.INTEGER:
-                    tok = scanner.Scan ();
-                    if (tok.Type != UDMFTokenType.INTEGER) {
-                        Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.INTEGER.ToString (), 0x1001, tok));
-                        return null;
-                    }
-                    break;
-                case UDMFTokenType.FLOAT:
-                    tok = scanner.Scan ();
-                    if (tok.Type != UDMFTokenType.FLOAT) {
-                        Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.FLOAT.ToString (), 0x1001, tok));
-                        return null;
-                    }
-                    break;
-                case UDMFTokenType.QUOTED_STRING:
-                    tok = scanner.Scan ();
-                    if (tok.Type != UDMFTokenType.QUOTED_STRING) {
-                        Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.QUOTED_STRING.ToString (), 0x1001, tok));
-                        return null;
-                    }
-                    break;
-                case UDMFTokenType.IDENTIFIER:
-                    tok = scanner.Scan ();
-                    if (tok.Type != UDMFTokenType.IDENTIFIER) {
-                        Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.IDENTIFIER.ToString (), 0x1001, tok));
-                        return null;
-                    }
-                    break;
-                /*case UDMFTokenType.KEYWORD:
-                    tok = scanner.Scan ();
-                    n = node.CreateNode (tok);
-                    node.Token.UpdateRange (tok);
-                    node.AddNode (n);
-                    if (tok.Type != UDMFTokenType.KEYWORD) {
-                        Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFTokenType.KEYWORD.ToString (), 0x1001, node));
-                        return;
-                    }
-                    break;*/
-                default:
-                    Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found.", 0x0002, tok));
-                    break;
             }
 
             return tok;
