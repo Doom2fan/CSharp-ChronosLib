@@ -24,8 +24,6 @@ using System.IO;
 using System.Reflection;
 
 namespace GZDoomLib.UDMF.Internal {
-    #region Parser
-
     internal sealed class UDMFParser_Internal {
         private static Dictionary<Type, ParserInfo> parserInfoList = new Dictionary<Type, ParserInfo> ();
         private UDMFScanner scanner;
@@ -102,7 +100,7 @@ namespace GZDoomLib.UDMF.Internal {
                         blockInfo.blockType = blockType;
                         blockInfo.propInfo = prop;
                         blockInfo.addMethod = CreateAddDelegate (type);
-                        GetBlockInfo (type, blockInfo);
+                        GetBlockInfo (blockType, blockInfo);
 
                         blocks.Add (dataAttr.Identifier, blockInfo);
                     }
@@ -161,6 +159,7 @@ namespace GZDoomLib.UDMF.Internal {
             info.InitializeDataClass (data);
 
             ParseGlobal_Expr_List (data, info);
+            data.PostProcessing ();
 
             scanner.Reset ();
 
@@ -306,14 +305,14 @@ namespace GZDoomLib.UDMF.Internal {
                         break;
 
                     case TypeCode.Single:
-                        if (valTok.Type != UDMFTokenType.FLOAT) {
+                        if (valTok.Type != UDMFTokenType.FLOAT && valTok.Type != UDMFTokenType.INTEGER) {
                             Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
                             break;
                         }
                         val = float.Parse (valTok.Text, CultureInfo.InvariantCulture);
                         break;
                     case TypeCode.Double:
-                        if (valTok.Type != UDMFTokenType.FLOAT) {
+                        if (valTok.Type != UDMFTokenType.FLOAT && valTok.Type != UDMFTokenType.INTEGER) {
                             Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
                             break;
                         }
@@ -345,6 +344,4 @@ namespace GZDoomLib.UDMF.Internal {
             return tok;
         }
     }
-
-    #endregion Parser
 }

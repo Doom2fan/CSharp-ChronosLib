@@ -219,7 +219,8 @@ namespace GZDoomLib.UDMF.Internal {
                         if (peek == '/') {
                             _ = ReadChar ();
 
-                            while (ReadChar () != '\n') ;
+                            for (int p = Reader.Peek (); p != '\n' && p != -1; p = Reader.Peek ())
+                                ReadChar ();
                         } else if (peek == '*') {
                             while (true) {
                                 c = ReadChar ();
@@ -407,10 +408,6 @@ namespace GZDoomLib.UDMF.Internal {
         public string Text { get; set; }
         public int Length { get => (EndPos - StartPos); }
 
-        // Contains all prior skipped symbols
-        public List<UDMFToken> Skipped { get; set; }
-        public object Value { get; set; }
-
         [XmlAttribute]
         public UDMFTokenType Type;
 
@@ -425,7 +422,6 @@ namespace GZDoomLib.UDMF.Internal {
             Line = line;
             Column = column;
             Text = ""; // Must initialize with empty string, may cause null reference exceptions otherwise
-            Value = null;
         }
 
         public void UpdateRange (UDMFToken token) {

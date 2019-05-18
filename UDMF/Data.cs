@@ -30,14 +30,31 @@ namespace GZDoomLib.UDMF {
     }
 
     public interface IUDMFBlock {
+        /// <summary>
+        /// Stores unrecognized assignments.
+        /// </summary>
         Dictionary<string, string> UnknownAssignments { get; set; }
     }
     public class UDMFUnknownBlock : IUDMFBlock {
+        /// <summary>
+        /// Stores the unrecognized block's assignments.
+        /// </summary>
         public Dictionary<string, string> UnknownAssignments { get; set; }
     }
 
     public abstract class UDMFParsedMapData {
+        /// <summary>
+        /// Stores unrecognized global assignments.
+        /// </summary>
         public Dictionary<string, string> UnknownGlobalAssignments { get; set; } = new Dictionary<string, string> ();
-        public List<Tuple <string, UDMFUnknownBlock>> UnknownBlocks { get; set; } = new List<Tuple<string, UDMFUnknownBlock>> ();
+        /// <summary>
+        /// Stores unrecognized blocks.
+        /// </summary>
+        public List<Tuple<string, UDMFUnknownBlock>> UnknownBlocks { get; set; } = new List<Tuple<string, UDMFUnknownBlock>> ();
+
+        /// <summary>
+        /// Performs postprocessing on the parsed map data.
+        /// </summary>
+        public virtual void PostProcessing () { }
     }
 }
