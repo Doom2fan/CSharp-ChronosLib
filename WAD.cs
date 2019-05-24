@@ -155,7 +155,6 @@ namespace GZDoomLib.WAD {
 
         #region Variables
 
-        private bool disposedValue = false;
         protected internal Stream WADStream { get; set; }
 
         #endregion
@@ -164,7 +163,7 @@ namespace GZDoomLib.WAD {
 
         public bool IsIWAD { get; protected internal set; } = false;
         public WADLumpCollection Lumps { get; protected internal set; }
-        public bool IsDisposed { get => disposedValue; }
+        public bool IsDisposed { get; private set; } = false;
 
         #endregion
 
@@ -262,7 +261,7 @@ namespace GZDoomLib.WAD {
 
         #region IDisposable
         protected virtual void Dispose (bool disposing) {
-            if (!disposedValue) {
+            if (!IsDisposed) {
                 if (disposing) {
                     if (WADStream != null)
                         WADStream.Dispose ();
@@ -272,7 +271,7 @@ namespace GZDoomLib.WAD {
 
                 Lumps = null;
 
-                disposedValue = true;
+                IsDisposed = true;
             }
         }
 
