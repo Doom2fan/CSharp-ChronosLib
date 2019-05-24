@@ -139,9 +139,7 @@ namespace GZDoomLib.UDMF.Internal {
         }
 
         private ParserInfo GetParserInfo (Type dataType) {
-            ParserInfo info;
-
-            if (!parserInfoList.TryGetValue (dataType, out info)) {
+            if (!parserInfoList.TryGetValue (dataType, out ParserInfo info)) {
                 info = new ParserInfo (dataType);
                 parserInfoList.Add (dataType, info);
             }
@@ -187,14 +185,14 @@ namespace GZDoomLib.UDMF.Internal {
             tok = scanner.LookAhead ();
             switch (tok.Type) {
                 case UDMFTokenType.BROPEN:
-                    if (info.blocks.ContainsKey (ident.Text))
-                        ParseBlock (dataClass, ident.Text, info.blocks [ident.Text]);
-                    else
-                        ParseBlock (dataClass, ident.Text, null);
+                    ParserInfo.BlockInfo block;
+                    info.blocks.TryGetValue (ident.Text, out block);
+                    ParseBlock (dataClass, ident.Text, block);
                     break;
                 case UDMFTokenType.EQSIGN:
-                    if (info.globalAssignments.ContainsKey (ident.Text))
-                        ParseAssignment_Expr (dataClass, info.globalAssignments [ident.Text]);
+                    Tuple<Type, Action<object, object>> assignment;
+                    if (info.globalAssignments.TryGetValue (ident.Text, out assignment))
+                        ParseAssignment_Expr (dataClass, assignment);
                     else {
                         var val = ParseAssignment_Expr (dataClass, null);
                         dataClass.UnknownGlobalAssignments.Add (ident.Text, val.Text);
@@ -243,8 +241,8 @@ namespace GZDoomLib.UDMF.Internal {
                     return;
                 }
 
-                if (info != null && info.assignments.ContainsKey (tok.Text))
-                    ParseAssignment_Expr (block, info.assignments [tok.Text]);
+                if (info != null && info.assignments.TryGetValue (tok.Text, out var assignment))
+                    ParseAssignment_Expr (block, assignment);
                 else
                     ParseAssignment_Expr (block, null);
 
