@@ -127,7 +127,7 @@ namespace GZDoomLib.UDMF {
         public string UpperTexture { get; set; } = "-";
         [UDMFData ("texturemiddle")]
         public string MiddleTexture { get; set; } = "-";
-        [UDMFData ("texturedottom")]
+        [UDMFData ("texturebottom")]
         public string BottomTexture { get; set; } = "-";
 
         [UDMFData ("sector")]
