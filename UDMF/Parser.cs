@@ -157,7 +157,8 @@ namespace GZDoomLib.UDMF.Internal {
             info.InitializeDataClass (data);
 
             ParseGlobal_Expr_List (data, info);
-            data.PostProcessing ();
+            if (Errors.Count < 1)
+                data.PostProcessing ();
 
             scanner.Reset ();
 
@@ -165,6 +166,11 @@ namespace GZDoomLib.UDMF.Internal {
         }
 
         private void ParseGlobal_Expr_List (UDMFParsedMapData dataClass, ParserInfo info) {
+            if (dataClass.UnknownBlocks == null)
+                dataClass.UnknownBlocks = new List<Tuple<string, UDMFUnknownBlock>> ();
+            if (dataClass.UnknownGlobalAssignments == null)
+                dataClass.UnknownGlobalAssignments = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
+
             UDMFToken tok = scanner.LookAhead ();
             while (tok.Type == UDMFTokenType.IDENTIFIER) {
                 ParseGlobal_Expr (dataClass, info);
@@ -233,6 +239,9 @@ namespace GZDoomLib.UDMF.Internal {
         }
 
         private void ParseExpr_List (IUDMFBlock block, ParserInfo.BlockInfo info) {
+            if (block.UnknownAssignments == null)
+                block.UnknownAssignments = new Dictionary<string, string> (StringComparer.OrdinalIgnoreCase);
+
             UDMFToken tok = scanner.LookAhead ();
             while (tok.Type == UDMFTokenType.IDENTIFIER) {
                 tok = scanner.Scan ();
@@ -243,8 +252,10 @@ namespace GZDoomLib.UDMF.Internal {
 
                 if (info != null && info.assignments.TryGetValue (tok.Text, out var assignment))
                     ParseAssignment_Expr (block, assignment);
-                else
-                    ParseAssignment_Expr (block, null);
+                else {
+                    var val = ParseAssignment_Expr (block, null);
+                    block.UnknownAssignments.Add (tok.Text, val.Text);
+                }
 
                 tok = scanner.LookAhead ();
             }
@@ -339,7 +350,7 @@ namespace GZDoomLib.UDMF.Internal {
                 return null;
             }
 
-            return tok;
+            return valTok;
         }
     }
 }

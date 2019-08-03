@@ -46,11 +46,11 @@ namespace GZDoomLib.UDMF {
         /// <summary>
         /// Stores unrecognized global assignments.
         /// </summary>
-        public Dictionary<string, string> UnknownGlobalAssignments { get; set; } = new Dictionary<string, string> ();
+        public Dictionary<string, string> UnknownGlobalAssignments { get; set; } 
         /// <summary>
         /// Stores unrecognized blocks.
         /// </summary>
-        public List<Tuple<string, UDMFUnknownBlock>> UnknownBlocks { get; set; } = new List<Tuple<string, UDMFUnknownBlock>> ();
+        public List<Tuple<string, UDMFUnknownBlock>> UnknownBlocks { get; set; }
 
         /// <summary>
         /// Performs postprocessing on the parsed map data.
