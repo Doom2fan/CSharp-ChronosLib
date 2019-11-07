@@ -7,8 +7,8 @@
     <ProjectGuid>{F3244763-AB45-4CEF-B5B6-4AD55622F9E6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GZDoomLib</RootNamespace>
-    <AssemblyName>GZDoomLib</AssemblyName>
+    <RootNamespace>ChronosLib</RootNamespace>
+    <AssemblyName>ChronosLib</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -75,6 +75,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -85,13 +88,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="UDMF\Data.cs" />
-    <Compile Include="UDMF\Parser.cs" />
-    <Compile Include="UDMF\Scanner.cs" />
-    <Compile Include="UDMF\Standards\StandardUDMF.cs" />
-    <Compile Include="UDMF\Standards\ZDoomUDMF.cs" />
-    <Compile Include="UDMF\UDMF.cs" />
-    <Compile Include="WAD.cs" />
+    <Compile Include="Reflection\ExtensionMethods.cs" />
+    <Compile Include="Doom\UDMF\Data.cs" />
+    <Compile Include="Doom\UDMF\Parser.cs" />
+    <Compile Include="Doom\UDMF\Scanner.cs" />
+    <Compile Include="Doom\UDMF\Standards\StandardUDMF.cs" />
+    <Compile Include="Doom\UDMF\Standards\ZDoomUDMF.cs" />
+    <Compile Include="Doom\UDMF\UDMF.cs" />
+    <Compile Include="Doom\WAD.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>

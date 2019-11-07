@@ -1,5 +1,5 @@
 ﻿/*
- *  GZDoomLib - A library for using GZDoom's file formats in C#
+ *  ChronosLib - A collection of useful things
  *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -18,15 +18,26 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace GZDoomLib.UDMF {
-    public class UDMFBlockList<T> : List<T>
+namespace ChronosLib.Doom.UDMF {
+    internal interface IUDMFBlockList {
+        void AddBlock (IUDMFBlock block);
+    }
+
+    /// <summary>
+    /// A list of UDMF blocks.
+    /// </summary>
+    /// <typeparam name="T">The block's type.</typeparam>
+    public class UDMFBlockList<T> : List<T>, IUDMFBlockList
         where T: IUDMFBlock {
         public UDMFBlockList () : base () {
         }
+
+        public void AddBlock (IUDMFBlock block)
+            => Add ((T) block);
+
+        public Type GetBlockType () 
+            => typeof (T);
     }
 
     public interface IUDMFBlock {

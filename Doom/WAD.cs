@@ -1,5 +1,5 @@
 ﻿/*
- *  GZDoomLib - A library for using GZDoom's file formats in C#
+ *  ChronosLib - A collection of useful things
  *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -20,10 +20,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
-namespace GZDoomLib.WAD {
+namespace ChronosLib.Doom.WAD {
     public class WADException : Exception {
         public WADException (string message, Exception innerException = null) : base (message, innerException) { }
     }

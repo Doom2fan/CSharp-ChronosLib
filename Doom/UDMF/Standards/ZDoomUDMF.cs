@@ -1,5 +1,5 @@
 ﻿/*
- *  GZDoomLib - A library for using GZDoom's file formats in C#
+ *  ChronosLib - A collection of useful things
  *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -16,13 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace GZDoomLib.UDMF.Standards {
+namespace ChronosLib.Doom.UDMF.Standards {
     public class UDMFZDoomVertex : UDMFVertex {
         [UDMFData ("zfloor")]
         public float ZFloor { get; set; }

@@ -1,5 +1,5 @@
 ﻿/*
- *  GZDoomLib - A library for using GZDoom's file formats in C#
+ *  ChronosLib - A collection of useful things
  *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 
 using System;
 
-namespace GZDoomLib {
+namespace ChronosLib {
     static internal class Utils {
         static internal class BitConversion {
             static internal class BigEndian {
