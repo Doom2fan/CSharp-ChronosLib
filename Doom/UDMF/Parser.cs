@@ -1,6 +1,6 @@
 /*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,144 +25,173 @@ using System.Reflection;
 using ChronosLib.Reflection;
 
 namespace ChronosLib.Doom.UDMF.Internal {
-    internal sealed class UDMFParser_Internal {
-        private static Dictionary<Type, ParserInfo> parserInfoList = new Dictionary<Type, ParserInfo> ();
-        private UDMFScanner scanner;
-        public List<UDMFParseError> Errors { get; set; }
+    internal class ParserInfo {
+        public interface IAssignmentInfo {
+            #region ================== Instance properties
 
-        public UDMFParser_Internal (UDMFScanner scanner) {
-            this.scanner = scanner;
-            this.Errors = new List<UDMFParseError> ();
+            Type PropType { get; }
+
+            #endregion
         }
 
-        private static bool IsUDMFType (Type type) {
-            switch (Type.GetTypeCode (type)) {
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                case TypeCode.Single:
-                case TypeCode.Double:
-                case TypeCode.String:
-                case TypeCode.Boolean:
-                    return true;
+        public class AssignmentInfo<T> : IAssignmentInfo {
+            #region ================== Instance fields
 
-                default:
-                    return false;
+            public PropertyDelegates<T> Delegates;
+
+            #endregion
+
+            #region ================== Instance properties
+
+            public Type PropType { get; set; }
+
+            #endregion
+
+            #region ================== Constructors
+
+            public AssignmentInfo (PropertyInfo prop) {
+                PropType = prop.PropertyType;
+                Delegates = prop.CreateSetGetDelegates<T> (false, true);
             }
+
+            #endregion
+
+            #region ================== Instance methods
+
+            public void Assign (object self, T val) {
+                Delegates.Setter (self, val);
+            }
+
+            #endregion
         }
 
-        private class ParserInfo {
-            public interface IAssignmentInfo {
-                Type propType { get; }
-            }
+        public struct BlockInfo {
+            #region ================== Instance fields
 
-            public class AssignmentInfo<T> : IAssignmentInfo {
-                public Type propType { get; set; }
-                public PropertyDelegates<T> delegates;
+            public Type BlockType;
+            public PropertyDelegates<IUDMFBlockList> Delegates;
+            public Dictionary<string, IAssignmentInfo> Assignments;
 
-                public AssignmentInfo (PropertyInfo prop) {
-                    propType = prop.PropertyType;
-                    delegates = prop.CreateSetGetDelegates<T> (false, true);
-                }
+            #endregion
+        }
 
-                public void Assign (object self, T val) {
-                    delegates.Setter (self, val);
-                }
-            }
+        #region ================== Instance fields
 
-            public struct BlockInfo {
-                public Type blockType;
-                public PropertyDelegates<IUDMFBlockList> delegates;
-                public Dictionary<string, IAssignmentInfo> assignments;
-            }
+        public readonly Dictionary<string, BlockInfo> Blocks;
+        public readonly Dictionary<string, IAssignmentInfo> GlobalAssignments;
 
-            public readonly Dictionary<string, BlockInfo> blocks;
-            public readonly Dictionary<string, IAssignmentInfo> globalAssignments;
+        #endregion
 
-            public ParserInfo (Type dataType) {
-                var udmfDataInfo = dataType.GetProperties ();
+        #region ================== Constructors
 
-                blocks = new Dictionary<string, BlockInfo> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
-                globalAssignments = new Dictionary<string, IAssignmentInfo> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
+        public ParserInfo (Type dataType) {
+            var udmfDataInfo = dataType.GetProperties ();
 
-                foreach (var prop in udmfDataInfo) {
-                    var dataAttr = prop.GetCustomAttribute<UDMFDataAttribute> ();
-                    var type = prop.PropertyType;
+            Blocks = new Dictionary<string, BlockInfo> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
+            GlobalAssignments = new Dictionary<string, IAssignmentInfo> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
 
-                    if (dataAttr is null)
-                        continue;
+            foreach (var prop in udmfDataInfo) {
+                var dataAttr = prop.GetCustomAttribute<UDMFDataAttribute> ();
+                var type = prop.PropertyType;
 
-                    if (IsUDMFType (type)) {
-                        globalAssignments.Add (
-                            dataAttr.Identifier,
-                            GetAssignmentInfo (prop)
-                        );
-                    } else if (type.IsGenericType && type.GetGenericTypeDefinition () == typeof (UDMFBlockList<>)) {
-                        var blockInfo = new BlockInfo ();
-                        var blockType = type.GetGenericArguments () [0];
+                if (dataAttr is null)
+                    continue;
 
-                        blockInfo.blockType = blockType;
-                        blockInfo.delegates = prop.CreateSetGetDelegates<IUDMFBlockList> (true, true);
-                        GetBlockInfo (blockType, ref blockInfo);
-
-                        blocks.Add (dataAttr.Identifier, blockInfo);
-                    }
-                }
-            }
-
-            private IAssignmentInfo GetAssignmentInfo (PropertyInfo prop) {
-                if      (prop.PropertyType == typeof (bool  )) return new AssignmentInfo<bool  > (prop);
-                else if (prop.PropertyType == typeof (int   )) return new AssignmentInfo<int   > (prop);
-                else if (prop.PropertyType == typeof (uint  )) return new AssignmentInfo<uint  > (prop);
-                else if (prop.PropertyType == typeof (long  )) return new AssignmentInfo<long  > (prop);
-                else if (prop.PropertyType == typeof (ulong )) return new AssignmentInfo<ulong > (prop);
-                else if (prop.PropertyType == typeof (float )) return new AssignmentInfo<float > (prop);
-                else if (prop.PropertyType == typeof (double)) return new AssignmentInfo<double> (prop);
-                else if (prop.PropertyType == typeof (string)) return new AssignmentInfo<string> (prop);
-
-                throw new ArgumentException ("", nameof (prop));
-            }
-
-            private void GetBlockInfo (Type type, ref BlockInfo blockInfo) {
-                var udmfDataInfo = type.GetProperties ();
-
-                blockInfo.assignments = new Dictionary<string, IAssignmentInfo> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
-
-                foreach (var prop in udmfDataInfo) {
-                    var dataAttr = prop.GetCustomAttribute<UDMFDataAttribute> ();
-                    var propType = prop.PropertyType;
-
-                    if (dataAttr is null)
-                        continue;
-
-                    blockInfo.assignments.Add (
+                if (UDMFParser_Internal.IsUDMFType (type)) {
+                    GlobalAssignments.Add (
                         dataAttr.Identifier,
                         GetAssignmentInfo (prop)
                     );
-                }
-            }
+                } else if (type.IsGenericType && type.GetGenericTypeDefinition () == typeof (UDMFBlockList<>)) {
+                    var blockInfo = new BlockInfo ();
+                    var blockType = type.GetGenericArguments () [0];
 
-            public void InitializeDataClass (UDMFParsedMapData data) {
-                foreach (var block in blocks.Values) {
-                    var propVal = block.delegates.Getter (data);
+                    blockInfo.BlockType = blockType;
+                    blockInfo.Delegates = prop.CreateSetGetDelegates<IUDMFBlockList> (true, true);
+                    GetBlockInfo (blockType, ref blockInfo);
 
-                    if (propVal is null) {
-                        propVal = (IUDMFBlockList) Activator.CreateInstance (block.delegates.Info.PropertyType);
-                        block.delegates.Setter (data, propVal);
-                    }
+                    Blocks.Add (dataAttr.Identifier, blockInfo);
                 }
             }
         }
 
-        private ParserInfo GetParserInfo (Type dataType) {
-            if (!parserInfoList.TryGetValue (dataType, out ParserInfo info)) {
-                info = new ParserInfo (dataType);
-                parserInfoList.Add (dataType, info);
-            }
+        #endregion
 
-            return info;
+        #region ================== Instance methods
+
+        public void InitializeDataClass (UDMFParsedMapData data) {
+            foreach (var block in Blocks.Values) {
+                var propVal = block.Delegates.Getter (data);
+
+                if (propVal is null) {
+                    propVal = (IUDMFBlockList) Activator.CreateInstance (block.Delegates.Info.PropertyType);
+                    block.Delegates.Setter (data, propVal);
+                }
+            }
         }
+
+        private IAssignmentInfo GetAssignmentInfo (PropertyInfo prop) {
+            if (prop.PropertyType == typeof (bool)) return new AssignmentInfo<bool> (prop);
+            else if (prop.PropertyType == typeof (int)) return new AssignmentInfo<int> (prop);
+            else if (prop.PropertyType == typeof (uint)) return new AssignmentInfo<uint> (prop);
+            else if (prop.PropertyType == typeof (long)) return new AssignmentInfo<long> (prop);
+            else if (prop.PropertyType == typeof (ulong)) return new AssignmentInfo<ulong> (prop);
+            else if (prop.PropertyType == typeof (float)) return new AssignmentInfo<float> (prop);
+            else if (prop.PropertyType == typeof (double)) return new AssignmentInfo<double> (prop);
+            else if (prop.PropertyType == typeof (string)) return new AssignmentInfo<string> (prop);
+
+            throw new ArgumentException ("", nameof (prop));
+        }
+
+        private void GetBlockInfo (Type type, ref BlockInfo blockInfo) {
+            var udmfDataInfo = type.GetProperties ();
+
+            blockInfo.Assignments = new Dictionary<string, IAssignmentInfo> (udmfDataInfo.Length, StringComparer.InvariantCultureIgnoreCase);
+
+            foreach (var prop in udmfDataInfo) {
+                var dataAttr = prop.GetCustomAttribute<UDMFDataAttribute> ();
+                var propType = prop.PropertyType;
+
+                if (dataAttr is null)
+                    continue;
+
+                blockInfo.Assignments.Add (
+                    dataAttr.Identifier,
+                    GetAssignmentInfo (prop)
+                );
+            }
+        }
+
+        #endregion
+    }
+
+    internal sealed class UDMFParser_Internal {
+        #region ================== Instance fields
+
+        private static Dictionary<Type, ParserInfo> parserInfoList;
+        private UDMFScanner scanner;
+
+        #endregion
+
+        #region ================== Instance properties
+
+        public List<UDMFParseError> Errors { get; set; }
+
+        #endregion
+
+        #region ================== Constructors
+
+        public UDMFParser_Internal (UDMFScanner scanner) {
+            parserInfoList = new Dictionary<Type, ParserInfo> ();
+            this.scanner = scanner;
+            Errors = new List<UDMFParseError> ();
+        }
+
+        #endregion
+
+        #region ================== Instance methods
+
+        #region Public & internal
 
         public UDMFParsedMapData Parse (TextReader reader, Type dataType) {
             scanner.Init (reader);
@@ -180,6 +209,36 @@ namespace ChronosLib.Doom.UDMF.Internal {
             scanner.Reset ();
 
             return data;
+        }
+
+        internal static bool IsUDMFType (Type type) {
+            switch (Type.GetTypeCode (type)) {
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.String:
+                case TypeCode.Boolean:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        #endregion
+
+        #region private
+
+        private ParserInfo GetParserInfo (Type dataType) {
+            if (!parserInfoList.TryGetValue (dataType, out ParserInfo info)) {
+                info = new ParserInfo (dataType);
+                parserInfoList.Add (dataType, info);
+            }
+
+            return info;
         }
 
         private void ParseGlobal_Expr_List (UDMFParsedMapData dataClass, ParserInfo info) {
@@ -209,11 +268,11 @@ namespace ChronosLib.Doom.UDMF.Internal {
             switch (tok.Type) {
                 case UDMFTokenType.BROPEN:
                     ParserInfo.BlockInfo block;
-                    info.blocks.TryGetValue (ident.Text, out block);
+                    info.Blocks.TryGetValue (ident.Text, out block);
                     ParseBlock (dataClass, ident.Text, block);
                     break;
                 case UDMFTokenType.EQSIGN:
-                    if (info.globalAssignments.TryGetValue (ident.Text, out var assignment))
+                    if (info.GlobalAssignments.TryGetValue (ident.Text, out var assignment))
                         ParseAssignment_Expr (dataClass, assignment);
                     else {
                         var val = ParseAssignment_Expr (dataClass, null);
@@ -237,8 +296,8 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
             IUDMFBlock block;
             if (info != null) {
-                block = (IUDMFBlock) Activator.CreateInstance (info.Value.blockType);
-                ((IUDMFBlockList) info.Value.delegates.Getter (dataClass)).AddBlock (block);
+                block = (IUDMFBlock) Activator.CreateInstance (info.Value.BlockType);
+                ((IUDMFBlockList) info.Value.Delegates.Getter (dataClass)).AddBlock (block);
             } else {
                 var newBlock = new UDMFUnknownBlock ();
                 block = newBlock;
@@ -266,7 +325,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
                     return;
                 }
 
-                if (info != null && info.Value.assignments.TryGetValue (tok.Text, out var assignment))
+                if (info != null && info.Value.Assignments.TryGetValue (tok.Text, out var assignment))
                     ParseAssignment_Expr (block, assignment);
                 else {
                     var val = ParseAssignment_Expr (block, null);
@@ -290,7 +349,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
             var valTok = scanner.Scan ();
             if (data != null) {
-                switch (Type.GetTypeCode (data.propType)) {
+                switch (Type.GetTypeCode (data.PropType)) {
                     case TypeCode.Boolean: {
                         bool val;
 
@@ -384,5 +443,9 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
             return valTok;
         }
+
+        #endregion
+
+        #endregion
     }
 }

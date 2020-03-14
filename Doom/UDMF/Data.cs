@@ -1,6 +1,6 @@
 ﻿/*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,51 +21,66 @@ using System.Collections.Generic;
 
 namespace ChronosLib.Doom.UDMF {
     internal interface IUDMFBlockList {
+        #region ================== Methods
+
         void AddBlock (IUDMFBlock block);
+
+        #endregion
     }
 
-    /// <summary>
-    /// A list of UDMF blocks.
-    /// </summary>
+    /// <summary>A list of UDMF blocks.</summary>
     /// <typeparam name="T">The block's type.</typeparam>
     public class UDMFBlockList<T> : List<T>, IUDMFBlockList
         where T: IUDMFBlock {
-        public UDMFBlockList () : base () {
-        }
+        #region ================== Constructors
+
+        public UDMFBlockList () : base () { }
+
+        #endregion
+
+        #region ================== Instance methods
 
         public void AddBlock (IUDMFBlock block)
             => Add ((T) block);
 
         public Type GetBlockType () 
             => typeof (T);
+
+        #endregion
     }
 
     public interface IUDMFBlock {
-        /// <summary>
-        /// Stores unrecognized assignments.
-        /// </summary>
+        #region ================== Properties
+
+        /// <summary>Stores unrecognized assignments.</summary>
         Dictionary<string, string> UnknownAssignments { get; set; }
+
+        #endregion
     }
     public class UDMFUnknownBlock : IUDMFBlock {
-        /// <summary>
-        /// Stores the unrecognized block's assignments.
-        /// </summary>
+        #region ================== Instance properties
+
+        /// <summary>Stores the unrecognized block's assignments.</summary>
         public Dictionary<string, string> UnknownAssignments { get; set; }
+
+        #endregion
     }
 
     public abstract class UDMFParsedMapData {
-        /// <summary>
-        /// Stores unrecognized global assignments.
-        /// </summary>
-        public Dictionary<string, string> UnknownGlobalAssignments { get; set; } 
-        /// <summary>
-        /// Stores unrecognized blocks.
-        /// </summary>
+        #region ================== Instance properties
+
+        /// <summary>Stores unrecognized global assignments.</summary>
+        public Dictionary<string, string> UnknownGlobalAssignments { get; set; }
+        /// <summary>Stores unrecognized blocks.</summary>
         public List<Tuple<string, UDMFUnknownBlock>> UnknownBlocks { get; set; }
 
-        /// <summary>
-        /// Performs postprocessing on the parsed map data.
-        /// </summary>
+        #endregion
+
+        #region ================== Instance methods
+
+        /// <summary>Performs post-processing on the parsed map data.</summary>
         public virtual void PostProcessing () { }
+
+        #endregion
     }
 }

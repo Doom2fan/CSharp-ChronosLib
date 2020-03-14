@@ -1,6 +1,6 @@
 ﻿/*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,10 +18,14 @@
 
 namespace ChronosLib.Doom.UDMF.Standards {
     public class UDMFZDoomVertex : UDMFVertex {
+        #region ================== Instance properties
+
         [UDMFData ("zfloor")]
         public float ZFloor { get; set; }
         [UDMFData ("zceiling")]
         public float ZCeil { get; set; }
+
+        #endregion
     }
 
     public class UDMFZDoomLinedef : UDMFLinedef {
@@ -37,6 +41,8 @@ namespace ChronosLib.Doom.UDMF.Standards {
     }
 
     public class UDMFParsedMapDataZDoom : UDMFParsedMapData {
+        #region ================== Instance properties
+
         [UDMFData ("namespace")]
         public string Namespace { get; set; }
 
@@ -50,5 +56,7 @@ namespace ChronosLib.Doom.UDMF.Standards {
         public UDMFBlockList<UDMFZDoomSector> Sectors { get; set; }
         [UDMFData ("thing")]
         public UDMFBlockList<UDMFZDoomThing> Things { get; set; }
+
+        #endregion
     }
 }

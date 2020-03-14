@@ -1,6 +1,6 @@
 ﻿/*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 
 using System;
 using System.Reflection;
-using System.Reflection.Emit;
 
 namespace ChronosLib.Reflection {
     public struct PropertyDelegates<T> {
@@ -29,33 +28,27 @@ namespace ChronosLib.Reflection {
         public Action<object, T> Setter { get; set; }
     }
 
-    /// <summary>
-    /// A class that implements extension methods for reflection.
-    /// </summary>
+    /// <summary>A class that implements extension methods for reflection.</summary>
     public static class ReflectionExtensions {
 #pragma warning disable IDE0051 // Remove unused private members
         private static Func<object, V> GetDelegateHelper<T, U, V> (PropertyInfo prop)
             where U : V {
-#pragma warning restore IDE0051 // Remove unused private members
             var del = (Func<T, U>) prop.GetMethod.CreateDelegate (typeof (Func<T, U>), null);
             return new Func <object, V> (self => {
                 return (V) del ((T) self);
             });
         }
 
-#pragma warning disable IDE0051 // Remove unused private members
         private static Action<object, V> SetDelegateHelper<T, U, V> (PropertyInfo prop)
             where U : V {
-#pragma warning restore IDE0051 // Remove unused private members
             var del = (Action<T, U>) prop.SetMethod.CreateDelegate (typeof (Action<T, U>), null);
             return new Action<object, V> ((self, val) => {
                 del ((T) self, (U) val);
             });
         }
+#pragma warning restore IDE0051 // Remove unused private members
 
-        /// <summary>
-        /// Creates delegates for a property's getter and setter.
-        /// </summary>
+        /// <summary>Creates delegates for a property's getter and setter.</summary>
         /// <param name="prop">The property to create the delegates for.</param>
         /// <param name="createGetter">Whether to create a getter.</param>
         /// <param name="createSetter">Whether to create a setter.</param>

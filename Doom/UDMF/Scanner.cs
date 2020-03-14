@@ -1,6 +1,6 @@
 /*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,21 +24,40 @@ namespace ChronosLib.Doom.UDMF.Internal {
     #region Scanner
 
     internal class UDMFScanner {
+        #region ================== Instance fields
+
         // TODO: Cache strings to reduce allocations, maybe even not use strings for numbers.
         protected StringBuilder sb;
 
-        public TextReader Reader { get; protected set; }
-        public int CurrentLine { get; protected set; }
-        protected int LineStart { get; set; }
-        public int CurrentColumn { get => (1 + (currentPos - LineStart)); }
         protected int currentPos;
-        public int CurrentPosition { get => currentPos; }
 
         private UDMFToken? lookAheadToken;
+
+        #endregion
+
+        #region ================== Instance properties
+
+        public TextReader Reader { get; protected set; }
+
+        protected int LineStart { get; set; }
+
+        public int CurrentLine { get; protected set; }
+        public int CurrentColumn { get => (1 + (currentPos - LineStart)); }
+        public int CurrentPosition { get => currentPos; }
+
+        #endregion
+
+        #region ================== Constructors
 
         public UDMFScanner () {
             lookAheadToken = null;
         }
+
+        #endregion
+
+        #region ================== Instance methods
+
+        #region Public
 
         public void Init (TextReader reader) {
             Reset ();
@@ -60,9 +79,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
             return t;
         }
 
-        /// <summary>
-        /// Executes a lookahead of the next token and will advance the scan on the input string.
-        /// </summary>
+        /// <summary>Executes a lookahead of the next token and will advance the scan on the input string.</summary>
         /// <returns></returns>
         public UDMFToken Scan () {
             UDMFToken tok = LookAhead (); // Temporarely retrieve the lookahead
@@ -70,88 +87,9 @@ namespace ChronosLib.Doom.UDMF.Internal {
             return tok;
         }
 
-        protected bool IsWhitespace (char c) {
-            switch (c) {
-                case '\n':
-                case '\r':
-                case ' ':
-                case '\t':
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
-        protected bool IsDigit (char c) {
-            return c >= '0' && c <= '9';
-        }
-
-        protected bool IsLower (char c) {
-            return c >= 'a' && c <= 'z';
-        }
-
-        protected bool IsUpper (char c) {
-            return c >= 'A' && c <= 'Z';
-        }
-
-        protected bool IsLetter (char c) {
-            return (c >= 'a' && c <= 'z') ||
-                   (c >= 'A' && c <= 'Z');
-        }
-
-        protected bool IsLetterOrDigit (char c) {
-            return (c >= '0' && c <= '9') ||
-                   (c >= 'a' && c <= 'z') ||
-                   (c >= 'A' && c <= 'Z');
-        }
-
-        protected bool IsKeywordChar (char c) {
-            switch (c) {
-                case '{':
-                case '}':
-                case '(':
-                case ')':
-                case ';':
-                case '"':
-                case '\'':
-                case '\\':
-                case ':':
-                case '\n':
-                case '\r':
-                case '\t':
-                case ' ':
-                    return false;
-
-                default:
-                    return true;
-            }
-        }
-
-        protected char ReadChar () {
-            var ret = (char) Reader.Read ();
-            currentPos++;
-
-            if (ret == '\n') {
-                CurrentLine++;
-                LineStart = currentPos;
-            }
-
-            return ret;
-        }
-
-        protected void SkipWhitespace () {
-            while (IsWhitespace ((char) Reader.Peek ()))
-                _ = ReadChar ();
-        }
-
-        /// <summary>
-        /// Returns token with longest best match
-        /// </summary>
+        /// <summary>Returns a token with the longest best match.</summary>
         /// <returns></returns>
-        /// <remarks>
-        /// Currently, this method does not implement keywords. "true" and "false" are treated as identifiers.
-        /// </remarks>
+        /// <remarks>Currently, this method does not implement keywords. "true" and "false" are treated as identifiers.</remarks>
         public UDMFToken LookAhead () {
             // This prevents double scanning and matching
             // Increased performance
@@ -277,6 +215,85 @@ namespace ChronosLib.Doom.UDMF.Internal {
             return tok;
         }
 
+        #endregion
+
+        #region Protected
+
+        protected bool IsWhitespace (char c) {
+            switch (c) {
+                case '\n':
+                case '\r':
+                case ' ':
+                case '\t':
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        protected bool IsDigit (char c) {
+            return c >= '0' && c <= '9';
+        }
+
+        protected bool IsLower (char c) {
+            return c >= 'a' && c <= 'z';
+        }
+
+        protected bool IsUpper (char c) {
+            return c >= 'A' && c <= 'Z';
+        }
+
+        protected bool IsLetter (char c) {
+            return (c >= 'a' && c <= 'z') ||
+                   (c >= 'A' && c <= 'Z');
+        }
+
+        protected bool IsLetterOrDigit (char c) {
+            return (c >= '0' && c <= '9') ||
+                   (c >= 'a' && c <= 'z') ||
+                   (c >= 'A' && c <= 'Z');
+        }
+
+        protected bool IsKeywordChar (char c) {
+            switch (c) {
+                case '{':
+                case '}':
+                case '(':
+                case ')':
+                case ';':
+                case '"':
+                case '\'':
+                case '\\':
+                case ':':
+                case '\n':
+                case '\r':
+                case '\t':
+                case ' ':
+                    return false;
+
+                default:
+                    return true;
+            }
+        }
+
+        protected char ReadChar () {
+            var ret = (char) Reader.Read ();
+            currentPos++;
+
+            if (ret == '\n') {
+                CurrentLine++;
+                LineStart = currentPos;
+            }
+
+            return ret;
+        }
+
+        protected void SkipWhitespace () {
+            while (IsWhitespace ((char) Reader.Peek ()))
+                _ = ReadChar ();
+        }
+
         protected void ParseHex (StringBuilder sb) {
             sb.Append (ReadChar ());
 
@@ -339,6 +356,10 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
             tok.Type = (foundFrac ? UDMFTokenType.FLOAT : UDMFTokenType.INTEGER);
         }
+
+        #endregion
+
+        #endregion
     }
 
     #endregion
@@ -375,6 +396,8 @@ namespace ChronosLib.Doom.UDMF.Internal {
     }
 
     public struct UDMFToken {
+        #region ================== Static functions
+
         public static string TokenTypeToString (UDMFTokenType val) {
             switch (val) {
                 case UDMFTokenType._NONE_:         return "None";
@@ -392,6 +415,17 @@ namespace ChronosLib.Doom.UDMF.Internal {
             }
         }
 
+        #endregion
+
+        #region ================== Instance fields
+
+        [XmlAttribute]
+        public UDMFTokenType Type;
+
+        #endregion
+
+        #region ================== Instance properties
+
         public int StartPos { get; set; }
         public int EndPos { get; set; }
         public int Line { get; set; }
@@ -400,17 +434,23 @@ namespace ChronosLib.Doom.UDMF.Internal {
         public string Text { get; set; }
         public int Length { get => (EndPos - StartPos); }
 
-        [XmlAttribute]
-        public UDMFTokenType Type;
+        #endregion
+
+        #region ================== Constructors
 
         public UDMFToken (int start, int end, int line, int column) {
             Type = UDMFTokenType._UNDETERMINED_;
+
             StartPos = start;
             EndPos = end;
             Line = line;
             Column = column;
             Text = string.Empty; // Must initialize with empty string, may cause null reference exceptions otherwise
         }
+
+        #endregion
+
+        #region ================== Instance methods
 
         public void UpdateRange (UDMFToken token) {
             if (token.StartPos < StartPos)
@@ -425,6 +465,8 @@ namespace ChronosLib.Doom.UDMF.Internal {
             else
                 return Type.ToString ();
         }
+
+        #endregion
     }
 
     #endregion

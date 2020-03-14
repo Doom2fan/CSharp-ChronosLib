@@ -1,6 +1,6 @@
 ﻿/*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,19 +26,14 @@ namespace ChronosLib.Doom.WAD {
     public class WADException : Exception {
         public WADException (string message, Exception innerException = null) : base (message, innerException) { }
     }
+
     public class WADLoadException : WADException {
         public enum ErrorType {
-            /// <summary>
-            /// The file contained in the stream is not a WAD.
-            /// </summary>
+            /// <summary>The file contained in the stream is not a WAD.</summary>
             NotWAD = 0,
-            /// <summary>
-            /// The WAD's directory is invalid.
-            /// </summary>
+            /// <summary>The WAD's directory is invalid.</summary>
             InvalidDirectory,
-            /// <summary>
-            /// The WAD is invalid or malformed.
-            /// </summary>
+            /// <summary>The WAD is invalid or malformed.</summary>
             InvalidWAD,
         }
         public ErrorType Error { get; protected set; }
@@ -46,23 +41,26 @@ namespace ChronosLib.Doom.WAD {
         public WADLoadException (string message, ErrorType err, Exception innerException = null) : base (message, innerException) { Error = err; }
     }
 
-    public class WADLump {
-        #region Properties
+    public struct WADLump {
+        #region ================== Instance properties
 
-        public bool IsValid { get; protected internal set; }
-        public WAD Source { get; protected internal set; }
+        /// <summary>Indicates whether the WAD lump is valid.</summary>
+        public bool IsValid { get; internal set; }
+        /// <summary>The WAD the lump belongs to.</summary>
+        public WAD Source { get; internal set; }
 
-        public int FilePos { get; protected internal set; }
-        public string Name { get; protected internal set; }
-        public int Size { get; protected internal set; }
+        /// <summary>The location of the lump's contents in the WAD file.</summary>
+        public int FilePos { get; internal set; }
+        /// <summary>The name of the lump.</summary>
+        public string Name { get; internal set; }
+        /// <summary>The file size of the IWAD in bytes.</summary>
+        public int Size { get; internal set; }
 
         #endregion
 
-        #region Methods
+        #region ================== Instance methods
 
-        /// <summary>
-        /// Reads the lump to a stream.
-        /// </summary>
+        /// <summary>Reads the lump to a stream.</summary>
         /// <returns>A stream containing the lump's data.</returns>
         public Stream ReadLump () {
             if (Source is null)
@@ -79,9 +77,7 @@ namespace ChronosLib.Doom.WAD {
             return new MemoryStream (buffer);
         }
 
-        /// <summary>
-        /// Reads the lump to a byte array.
-        /// </summary>
+        /// <summary>Reads the lump to a byte array.</summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
         public int ReadLump (byte [] buffer) {
@@ -99,38 +95,46 @@ namespace ChronosLib.Doom.WAD {
         #endregion
     }
 
-    public class WADLumpCollection : ICollection<WADLump> {
-        protected List<WADLump> lumps;
+    public sealed class WADLumpCollection : ICollection<WADLump> {
+        #region ================== Instance fields
 
-        #region Properties
+        private List<WADLump> lumps;
+
+        #endregion
+
+        #region ================== Instance properties
 
         public int Count { get; set; }
         public bool IsReadOnly => true;
 
         #endregion
 
-        #region Constructors
+        #region ================== Constructors
 
-        protected internal WADLumpCollection (int capacity = 1000) {
+        internal WADLumpCollection (int capacity = 1000) {
             lumps = new List<WADLump> (capacity);
         }
 
         #endregion
 
-        #region Methods
+        #region ================== Instance methods
 
-        protected internal void AddLump (WADLump item) => lumps.Add (item);
-        protected internal void RemoveLump (WADLump item) => lumps.Remove (item);
-        protected internal void ClearList () => lumps.Clear ();
+        internal void AddLump (WADLump item) => lumps.Add (item);
+        internal void RemoveLump (WADLump item) => lumps.Remove (item);
+        internal void ClearList () => lumps.Clear ();
 
         #endregion
 
-        #region Interface
+        #region ================== Indexers
 
         public WADLump this [int i] {
             get => lumps [i];
-            protected internal set => lumps [i] = value;
+            internal set => lumps [i] = value;
         }
+
+        #endregion
+
+        #region ================== Interfaces
 
         public bool Contains (WADLump item) => lumps.Contains (item);
         public IEnumerator<WADLump> GetEnumerator () => lumps.GetEnumerator ();
@@ -145,38 +149,39 @@ namespace ChronosLib.Doom.WAD {
     }
 
     public class WAD : IEnumerable<WADLump>, IDisposable {
-        #region Constants
+        #region ================== Constants
 
         public const int HEADERSIZE = 4 * 3;
         public const int LUMPINFOSIZE = 4 * 4;
 
         #endregion
 
-        #region Variables
+        #region ================== Instance fields
 
         protected internal Stream WADStream { get; set; }
 
         #endregion
 
-        #region Properties
+        #region ================== Instance properties
 
+        /// <summary>Whether the WAD is an IWAD.</summary>
         public bool IsIWAD { get; protected internal set; } = false;
+        /// <summary>A collection containing all of the WAD's lumps.</summary>
         public WADLumpCollection Lumps { get; protected internal set; }
+        /// <summary>Whether the WAD instance has been disposed.</summary>
         public bool IsDisposed { get; private set; } = false;
 
         #endregion
 
-        #region Constructors
+        #region ================== Constructors
 
         private WAD () { }
 
         #endregion
 
-        #region Methods
+        #region ================== Static functions
 
-        /// <summary>
-        /// Loads a WAD file.
-        /// </summary>
+        /// <summary>Loads a WAD file.</summary>
         /// <param name="stream">The stream to read the WAD from.</param>
         /// <param name="loadIntoRAM">If true, the entire stream will be loaded into RAM.</param>
         /// <returns>An instance of the WAD class.</returns>
@@ -248,7 +253,7 @@ namespace ChronosLib.Doom.WAD {
 
         #endregion
 
-        #region Interface
+        #region ================== Interfaces
 
         public WADLump this [int i] {
             get => Lumps [i];
@@ -259,6 +264,7 @@ namespace ChronosLib.Doom.WAD {
         IEnumerator IEnumerable.GetEnumerator () => Lumps.GetEnumerator ();
 
         #region IDisposable
+
         protected virtual void Dispose (bool disposing) {
             if (!IsDisposed) {
                 if (disposing) {
@@ -277,6 +283,7 @@ namespace ChronosLib.Doom.WAD {
         public void Dispose () {
             Dispose (true);
         }
+
         #endregion
 
         #endregion

@@ -1,6 +1,6 @@
 ﻿/*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,24 +20,38 @@ using System.Collections.Generic;
 
 namespace ChronosLib.Doom.UDMF {
     public class UDMFVertex : IUDMFBlock {
+        #region ================== Instance properties
+
         public Dictionary<string, string> UnknownAssignments { get; set; }
 
         [UDMFData ("x")]
         public float X { get; set; }
         [UDMFData ("y")]
         public float Y { get; set; }
+
+        #endregion
     }
 
     public class UDMFLinedef : IUDMFBlock {
+        #region ================== Instance properties
+
         public Dictionary<string, string> UnknownAssignments { get; set; }
 
         [UDMFData ("id")]
         public int Id { get; set; } = -1;
 
+        #region Vertices
+
         [UDMFData ("v1")]
         public int Vertex1 { get; set; }
         [UDMFData ("v2")]
         public int Vertex2 { get; set; }
+
+        #endregion
+
+        #region Flags
+
+        #region Physics
 
         [UDMFData ("blocking")]
         public bool Blocking { get; set; } = false;
@@ -50,12 +64,18 @@ namespace ChronosLib.Doom.UDMF {
         [UDMFData ("jumpover")]
         public bool JumpOverRailing { get; set; } = false;
 
+        #endregion
+
+        #region Texture
+
         [UDMFData ("twosided")]
         public bool TwoSided { get; set; } = false;
         [UDMFData ("dontpegtop")]
         public bool UpperUnpegged { get; set; } = false;
         [UDMFData ("dontpegbottom")]
         public bool LowerUnpegged { get; set; } = false;
+
+        #endregion
 
         [UDMFData ("secret")]
         public bool Secret { get; set; } = false;
@@ -69,6 +89,12 @@ namespace ChronosLib.Doom.UDMF {
 
         [UDMFData ("translucent")]
         public bool Translucent { get; set; } = false;
+
+        #endregion
+
+        #region Action specials
+
+        #region Flags
 
         [UDMFData ("playercross")]
         public bool Spec_PlayerCross { get; set; } = false;
@@ -89,6 +115,10 @@ namespace ChronosLib.Doom.UDMF {
         [UDMFData ("repeatspecial")]
         public bool Spec_RepeatableAction { get; set; } = false;
 
+        #endregion
+
+        #region Special and arguments
+
         [UDMFData ("special")]
         public int Special { get; set; } = 0;
         [UDMFData ("arg0")]
@@ -102,22 +132,40 @@ namespace ChronosLib.Doom.UDMF {
         [UDMFData ("arg4")]
         public int Arg4 { get; set; } = 0;
 
+        #endregion
+
+        #endregion
+
+        #region Sidedefs
+
         [UDMFData ("sidefront")]
         public int SideFront { get; set; }
         [UDMFData ("sideback")]
         public int SideBack { get; set; } = -1;
 
+        #endregion
+
         [UDMFData ("comment")]
         public string Comment { get; set; } = "";
+
+        #endregion
     }
 
     public class UDMFSidedef : IUDMFBlock {
+        #region ================== Instance properties
+
         public Dictionary<string, string> UnknownAssignments { get; set; }
+
+        #region Offsets
 
         [UDMFData ("offsetx")]
         public float OffsetX { get; set; } = 0;
         [UDMFData ("offsety")]
         public float OffsetY { get; set; } = 0;
+
+        #endregion
+
+        #region Textures
 
         [UDMFData ("texturetop")]
         public string UpperTexture { get; set; } = "-";
@@ -126,43 +174,64 @@ namespace ChronosLib.Doom.UDMF {
         [UDMFData ("texturebottom")]
         public string BottomTexture { get; set; } = "-";
 
+        #endregion
+
         [UDMFData ("sector")]
         public int Sector { get; set; } = 0;
 
         [UDMFData ("comment")]
         public string Comment { get; set; } = "";
+
+        #endregion
     }
 
     public class UDMFSector : IUDMFBlock {
+        #region ================== Instance properties
+
         public Dictionary<string, string> UnknownAssignments { get; set; }
+
+        #region Heights
 
         [UDMFData ("heightfloor")]
         public float FloorHeight { get; set; } = 0;
         [UDMFData ("heightceiling")]
         public float CeilHeight { get; set; } = 0;
 
+        #endregion
+
+        #region Textures
+
         [UDMFData ("texturefloor")]
         public string FloorTexture { get; set; }
         [UDMFData ("textureceiling")]
         public string CeilTexture { get; set; }
+
+        #endregion
 
         [UDMFData ("lightlevel")]
         public int LightLevel { get; set; } = 160;
 
         [UDMFData ("special")]
         public int Special { get; set; } = 0;
+
         [UDMFData ("id")]
         public int Id { get; set; } = 0;
 
         [UDMFData ("comment")]
         public string Comment { get; set; } = "";
+
+        #endregion
     }
 
     public class UDMFThing : IUDMFBlock {
+        #region ================== Instance properties
+
         public Dictionary<string, string> UnknownAssignments { get; set; }
 
         [UDMFData ("id")]
         public int Id { get; set; } = 0;
+
+        #region Coordinates
 
         [UDMFData ("x")]
         public float X { get; set; }
@@ -172,11 +241,17 @@ namespace ChronosLib.Doom.UDMF {
         [UDMFData ("height")]
         public float Height { get; set; } = 0;
 
+        #endregion
+
         [UDMFData ("angle")]
         public int Angle { get; set; } = 0;
 
         [UDMFData ("type")]
         public int Type { get; set; }
+
+        #region Flags
+
+        #region Spawn flags
 
         [UDMFData ("skill1")]
         public bool Skill1 { get; set; } = false;
@@ -188,32 +263,50 @@ namespace ChronosLib.Doom.UDMF {
         public bool Skill4 { get; set; } = false;
         [UDMFData ("skill5")]
         public bool Skill5 { get; set; } = false;
-        [UDMFData ("ambush")]
-        public bool Ambush { get; set; } = false;
+
         [UDMFData ("single")]
         public bool SpawnSingleplayer { get; set; } = false;
         [UDMFData ("dm")]
         public bool SpawnDeathmatch { get; set; } = false;
         [UDMFData ("coop")]
         public bool SpawnCooperative { get; set; } = false;
-        [UDMFData ("friend")]
-        public bool Friendly { get; set; } = false;
-        [UDMFData ("dormant")]
-        public bool Dormant { get; set; } = false;
+
         [UDMFData ("class1")]
         public bool Class1 { get; set; } = false;
         [UDMFData ("class2")]
         public bool Class2 { get; set; } = false;
         [UDMFData ("class3")]
         public bool Class3 { get; set; } = false;
+
+        #endregion
+
+        #region Monster AI
+
+        [UDMFData ("dormant")]
+        public bool Dormant { get; set; } = false;
+        [UDMFData ("ambush")]
+        public bool Ambush { get; set; } = false;
         [UDMFData ("standing")]
         public bool Standing { get; set; } = false;
+        [UDMFData ("friend")]
+        public bool Friendly { get; set; } = false;
         [UDMFData ("strifeally")]
         public bool StrifeAlly { get; set; } = false;
+
+        #endregion
+
+        #region Visibility
+
         [UDMFData ("translucent")]
         public bool Translucent { get; set; } = false;
         [UDMFData ("invisible")]
         public bool Invisible { get; set; } = false;
+
+        #endregion
+
+        #endregion
+
+        #region Action special
 
         [UDMFData ("special")]
         public int Special { get; set; } = 0;
@@ -228,11 +321,17 @@ namespace ChronosLib.Doom.UDMF {
         [UDMFData ("arg4")]
         public int Arg4 { get; set; } = 0;
 
+        #endregion
+
         [UDMFData ("comment")]
         public string Comment { get; set; } = "";
+
+        #endregion
     }
 
     public class UDMFParsedMapDataStandard : UDMFParsedMapData {
+        #region ================== Instance properties
+
         [UDMFData ("namespace")]
         public string Namespace { get; set; }
 
@@ -246,5 +345,7 @@ namespace ChronosLib.Doom.UDMF {
         public UDMFBlockList<UDMFSector> Sectors { get; set; }
         [UDMFData ("thing")]
         public UDMFBlockList<UDMFThing> Things { get; set; }
+
+        #endregion
     }
 }

@@ -1,6 +1,6 @@
 ﻿/*
  *  ChronosLib - A collection of useful things
- *  Copyright (C) 2018-2019 Chronos "phantombeta" Ouroboros
+ *  Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ using ChronosLib.Doom.UDMF.Internal;
 
 namespace ChronosLib.Doom.UDMF {
     public class UDMFParseError {
+        #region ================== Instance properties
+
         public int Code { get; }
         public int Line { get; }
         public int Column { get; }
@@ -30,11 +32,16 @@ namespace ChronosLib.Doom.UDMF {
         public int Length { get; }
         public string Message { get; }
 
-        // just for the sake of serialization
+        #endregion
+
+        #region ================== Constructors
+
+        // Just for the sake of serialization
         public UDMFParseError () {
         }
 
-        public UDMFParseError (string message, int code, UDMFToken tok) : this (message, code, tok.Line, tok.Column, tok.StartPos, tok.Length) {
+        public UDMFParseError (string message, int code, UDMFToken tok) :
+            this (message, code, tok.Line, tok.Column, tok.StartPos, tok.Length) {
         }
 
         public UDMFParseError (string message, int code, int line, int col, int pos, int length) {
@@ -45,36 +52,59 @@ namespace ChronosLib.Doom.UDMF {
             Position = pos;
             Length = length;
         }
+
+        #endregion
     }
 
     [AttributeUsage (AttributeTargets.Field | AttributeTargets.Property)]
     public class UDMFDataAttribute : Attribute {
+        #region ================== Instance fields
+
         private string identifier;
+
+        #endregion
+
+        #region ================== Instance properties
+
+        public virtual string Identifier { get => identifier; }
+
+        #endregion
+
+        #region ================== Constructors
 
         public UDMFDataAttribute (string name) {
             identifier = name;
         }
 
-        public virtual string Identifier { get => identifier; }
+        #endregion
     }
 
     public class UDMFParser<T>
         where T : UDMFParsedMapData {
+        #region ================== Instance fields
+
         protected Type dataType = typeof (T);
         internal UDMFParser_Internal parser;
+
+        #endregion
+
+        #region ================== Instance properties
+
         public List<UDMFParseError> Errors { get; protected set; }
+
+        #endregion
+
+        #region ================== Constructors
 
         public UDMFParser () {
             parser = new UDMFParser_Internal (new UDMFScanner ());
         }
 
-        protected T ParseInternal (TextReader reader) {
-            parser.Errors.Clear ();
-            T data = (T) parser.Parse (reader, dataType);
-            Errors = parser.Errors;
+        #endregion
 
-            return data;
-        }
+        #region ================== Instance methods
+
+        #region Public
 
         public T Parse (TextReader input) {
             if (input is null)
@@ -100,5 +130,21 @@ namespace ChronosLib.Doom.UDMF {
             using (var reader = new StringReader (input))
                 return ParseInternal (reader);
         }
+
+        #endregion
+
+        #region Protected
+
+        protected T ParseInternal (TextReader reader) {
+            parser.Errors.Clear ();
+            T data = (T) parser.Parse (reader, dataType);
+            Errors = parser.Errors;
+
+            return data;
+        }
+
+        #endregion
+
+        #endregion
     }
 }
