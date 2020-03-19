@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
@@ -26,9 +27,6 @@ namespace ChronosLib.Doom.UDMF.Internal {
     internal class UDMFScanner {
         #region ================== Instance fields
 
-        // TODO: Cache strings to reduce allocations, maybe even not use strings for numbers.
-        protected StringBuilder sb;
-
         protected int currentPos;
 
         private UDMFToken? lookAheadToken;
@@ -37,7 +35,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         #region ================== Instance properties
 
-        public TextReader Reader { get; protected set; }
+        public string TextSource { get; protected set; }
 
         protected int LineStart { get; set; }
 
@@ -59,22 +57,20 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         #region Public
 
-        public void Init (TextReader reader) {
+        public void Init (string textSource) {
             Reset ();
-            Reader = reader;
+            TextSource = textSource;
         }
 
         public void Reset () {
-            Reader = null;
             CurrentLine = 1;
             LineStart = 0;
-            currentPos = 1;
+            currentPos = 0;
             lookAheadToken = null;
-            sb = new StringBuilder (200);
         }
 
         public UDMFToken GetToken (UDMFTokenType type) {
-            var t = new UDMFToken (currentPos, currentPos + 1, CurrentLine, CurrentColumn);
+            var t = new UDMFToken (TextSource, currentPos, currentPos + 1, CurrentLine, CurrentColumn);
             t.Type = type;
             return t;
         }
@@ -98,64 +94,52 @@ namespace ChronosLib.Doom.UDMF.Internal {
                 && lookAheadToken.Value.Type != UDMFTokenType._NONE_)
                 return lookAheadToken.Value;
 
-            var tok = new UDMFToken (0, 0, 0, 0);
+            var tok = new UDMFToken (TextSource, 0, 0, 0, 0);
             tok.Type = UDMFTokenType._NONE_;
 
             do {
                 SkipWhitespace ();
 
-                char c = ReadChar ();
-
                 tok.StartPos = currentPos;
                 tok.Line = CurrentLine;
                 tok.Column = CurrentColumn;
 
+                char c = ReadChar ();
+
                 char peek;
-                sb.Clear ();
                 switch (c) {
                     case '"':
                         do {
                             c = ReadChar ();
-
-                            if (c == '\\' && Reader.Peek () == '"') {
-                                ReadChar ();
-                                sb.Append ('"');
-                            } else if (c != '"')
-                                sb.Append (c);
                         } while (c != '"');
 
-                        tok.Text = sb.ToString ();
                         tok.Type = UDMFTokenType.QUOTED_STRING;
                         break;
                     case '{':
-                        tok.Text = "{";
                         tok.Type = UDMFTokenType.BROPEN;
                         break;
                     case '}':
-                        tok.Text = "}";
                         tok.Type = UDMFTokenType.BRCLOSE;
                         break;
                     case '=':
-                        tok.Text = "=";
                         tok.Type = UDMFTokenType.EQSIGN;
                         break;
                     case ';':
-                        tok.Text = ";";
                         tok.Type = UDMFTokenType.SEMICOLON;
                         break;
 
                     case '/':
-                        peek = (char) Reader.Peek ();
+                        peek = (char) PeekChar ();
                         if (peek == '/') {
                             _ = ReadChar ();
 
-                            for (int p = Reader.Peek (); p != '\n' && p != -1; p = Reader.Peek ())
+                            for (int p = PeekChar (); p != '\n' && p != -1; p = PeekChar ())
                                 ReadChar ();
                         } else if (peek == '*') {
                             while (true) {
                                 c = ReadChar ();
 
-                                if (c == '*' && Reader.Peek () == '/') {
+                                if (c == '*' && PeekChar () == '/') {
                                     _ = ReadChar ();
                                     break;
                                 }
@@ -168,39 +152,33 @@ namespace ChronosLib.Doom.UDMF.Internal {
                     case '-':
                     default:
                         if (c == '_' || IsLetter (c)) {
-                            sb.Append (c);
                             tok.Type = UDMFTokenType.IDENTIFIER;
 
-                            c = (char) Reader.Peek ();
+                            c = (char) PeekChar ();
                             while (IsLetterOrDigit (c) || c == '_') {
-                                sb.Append (c);
                                 _ = ReadChar ();
 
-                                c = (char) Reader.Peek ();
+                                c = (char) PeekChar ();
                             }
                         } else if (IsDigit (c) || c == '+' || c == '-') {
-                            sb.Append (c);
-
                             if (c == '0') {
-                                peek = (char) Reader.Peek ();
+                                peek = (char) PeekChar ();
                                 if (peek == 'x' || peek == 'X') {
                                     tok.Type = UDMFTokenType.INTEGER;
-                                    ParseHex (sb);
+                                    ParseHex ();
                                 } else if (IsDigit (peek)) {
                                     tok.Type = UDMFTokenType.INTEGER;
-                                    ParseOctal (sb);
+                                    ParseOctal ();
                                 } else
-                                    ParseDecimal (sb, ref tok);
+                                    ParseDecimal (ref tok);
                             } else
-                                ParseDecimal (sb, ref tok);
+                                ParseDecimal (ref tok);
                         } else
                             tok.Type = UDMFTokenType._UNDETERMINED_;
-
-                        tok.Text = sb.ToString ();
                         break;
                 }
             } while (tok.Type == UDMFTokenType._NONE_);
-            tok.EndPos = currentPos - 1;
+            tok.EndPos = currentPos;
 
             /*if (tok.Type == UDMFTokenType.IDENTIFIER && (tok.Text.Length == 4 || tok.Text.Length == 5)) {
                 switch (tok.Text.ToLowerInvariant ()) {
@@ -277,8 +255,18 @@ namespace ChronosLib.Doom.UDMF.Internal {
             }
         }
 
+        protected int PeekChar () {
+            if (currentPos >= TextSource.Length)
+                return -1;
+
+            return TextSource [currentPos];
+        }
+
         protected char ReadChar () {
-            var ret = (char) Reader.Read ();
+            if (currentPos >= TextSource.Length)
+                return '\0';
+
+            var ret = TextSource [currentPos];
             currentPos++;
 
             if (ret == '\n') {
@@ -290,57 +278,47 @@ namespace ChronosLib.Doom.UDMF.Internal {
         }
 
         protected void SkipWhitespace () {
-            while (IsWhitespace ((char) Reader.Peek ()))
+            while (IsWhitespace ((char) PeekChar ()))
                 _ = ReadChar ();
         }
 
-        protected void ParseHex (StringBuilder sb) {
-            sb.Append (ReadChar ());
-
-            char c = (char) Reader.Peek ();
+        protected void ParseHex () {
+            char c = (char) PeekChar ();
             while (IsDigit (c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
-                sb.Append (c);
                 _ = ReadChar ();
 
-                c = (char) Reader.Peek ();
+                c = (char) PeekChar ();
             }
         }
 
-        protected void ParseOctal (StringBuilder sb) {
-            sb.Append (ReadChar ());
-
-            char c = (char) Reader.Peek ();
+        protected void ParseOctal () {
+            char c = (char) PeekChar ();
             while (c >= '0' && c <= '7') {
-                sb.Append (c);
                 _ = ReadChar ();
 
-                c = (char) Reader.Peek ();
+                c = (char) PeekChar ();
             }
         }
 
-        protected void ParseDecimal (StringBuilder sb, ref UDMFToken tok) {
+        protected void ParseDecimal (ref UDMFToken tok) {
             bool foundFrac = false;
             bool foundExp = false;
 
             char c;
             while (true) {
-                c = (char) Reader.Peek ();
+                c = (char) PeekChar ();
 
                 if (IsDigit (c)) {
-                    sb.Append (c);
                     _ = ReadChar ();
                 } else if (!foundFrac && c == '.') {
                     foundFrac = true;
-                    sb.Append (c);
                     _ = ReadChar ();
                 } else if (foundFrac && !foundExp && (c == 'e' || c == 'E')) {
                     foundExp = true;
-                    sb.Append (c);
                     _ = ReadChar ();
 
                     c = ReadChar ();
                     if (c == '+' || c == '-') {
-                        sb.Append (c);
                         c = ReadChar ();
                     }
 
@@ -348,8 +326,6 @@ namespace ChronosLib.Doom.UDMF.Internal {
                         tok.Type = UDMFTokenType._UNDETERMINED_;
                         return;
                     }
-
-                    sb.Append (c);
                 } else
                     break;
             }
@@ -426,26 +402,27 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         #region ================== Instance properties
 
+        public string SourceString { get; set; }
         public int StartPos { get; set; }
         public int EndPos { get; set; }
         public int Line { get; set; }
         public int Column { get; set; }
 
-        public string Text { get; set; }
+        public ReadOnlySpan<char> Text { get => SourceString.AsSpan (StartPos, Length); }
         public int Length { get => (EndPos - StartPos); }
 
         #endregion
 
         #region ================== Constructors
 
-        public UDMFToken (int start, int end, int line, int column) {
+        public UDMFToken (string srcStr, int start, int end, int line, int column) {
             Type = UDMFTokenType._UNDETERMINED_;
 
+            SourceString = srcStr;
             StartPos = start;
             EndPos = end;
             Line = line;
             Column = column;
-            Text = string.Empty; // Must initialize with empty string, may cause null reference exceptions otherwise
         }
 
         #endregion
@@ -461,7 +438,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         public override string ToString () {
             if (Text != null)
-                return Type.ToString () + " '" + Text + "'";
+                return Type.ToString () + " '" + Text.ToString () + "'";
             else
                 return Type.ToString ();
         }

@@ -106,38 +106,20 @@ namespace ChronosLib.Doom.UDMF {
 
         #region Public
 
-        public T Parse (TextReader input) {
+        public T Parse (string input) {
             if (input is null)
                 throw new ArgumentNullException (nameof (input));
 
             return ParseInternal (input);
         }
 
-        public T Parse (Stream input) {
-            if (input is null)
-                throw new ArgumentNullException (nameof (input));
-            if (!input.CanRead)
-                throw new ArgumentException ("Input stream must be readable.", nameof (input));
-
-            using (var reader = new StreamReader (input))
-                return ParseInternal (reader);
-        }
-
-        public T Parse (string input) {
-            if (input is null)
-                throw new ArgumentNullException (nameof (input));
-
-            using (var reader = new StringReader (input))
-                return ParseInternal (reader);
-        }
-
         #endregion
 
         #region Protected
 
-        protected T ParseInternal (TextReader reader) {
+        protected T ParseInternal (string udmfSource) {
             parser.Errors.Clear ();
-            T data = (T) parser.Parse (reader, dataType);
+            T data = (T) parser.Parse (udmfSource, dataType);
             Errors = parser.Errors;
 
             return data;

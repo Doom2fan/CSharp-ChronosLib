@@ -193,8 +193,8 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         #region Public & internal
 
-        public UDMFParsedMapData Parse (TextReader reader, Type dataType) {
-            scanner.Init (reader);
+        public UDMFParsedMapData Parse (string udmfSource, Type dataType) {
+            scanner.Init (udmfSource);
 
             GetParserInfo (dataType);
 
@@ -230,7 +230,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         #endregion
 
-        #region private
+        #region Private
 
         private ParserInfo GetParserInfo (Type dataType) {
             if (!parserInfoList.TryGetValue (dataType, out ParserInfo info)) {
@@ -258,29 +258,30 @@ namespace ChronosLib.Doom.UDMF.Internal {
         private void ParseGlobal_Expr (UDMFParsedMapData dataClass, ParserInfo info) {
             UDMFToken tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.IDENTIFIER) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.IDENTIFIER), 0x1001, tok));
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.ToString ().Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.IDENTIFIER), 0x1001, tok));
                 return;
             }
 
             var ident = tok;
+            var identText = ident.Text.ToString ();
 
             tok = scanner.LookAhead ();
             switch (tok.Type) {
                 case UDMFTokenType.BROPEN:
                     ParserInfo.BlockInfo block;
-                    info.Blocks.TryGetValue (ident.Text, out block);
-                    ParseBlock (dataClass, ident.Text, block);
+                    info.Blocks.TryGetValue (identText, out block);
+                    ParseBlock (dataClass, identText, block);
                     break;
                 case UDMFTokenType.EQSIGN:
-                    if (info.GlobalAssignments.TryGetValue (ident.Text, out var assignment))
+                    if (info.GlobalAssignments.TryGetValue (identText, out var assignment))
                         ParseAssignment_Expr (dataClass, assignment);
                     else {
                         var val = ParseAssignment_Expr (dataClass, null);
-                        dataClass.UnknownGlobalAssignments.Add (ident.Text, val.Value.Text);
+                        dataClass.UnknownGlobalAssignments.Add (identText, val.Value.Text.ToString ());
                     }
                     break;
                 default:
-                    Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found.", 0x0002, tok));
+                    Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.ToString ().Replace ("\n", "") + "' found.", 0x0002, tok));
                     return;
             }
 
@@ -290,7 +291,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
         private void ParseBlock (UDMFParsedMapData dataClass, string ident, ParserInfo.BlockInfo? info) {
             UDMFToken tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.BROPEN) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.BROPEN), 0x1001, tok));
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.ToString ().Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.BROPEN), 0x1001, tok));
                 return;
             }
 
@@ -308,7 +309,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
             tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.BRCLOSE) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.BRCLOSE), 0x1001, tok));
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.ToString ().Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.BRCLOSE), 0x1001, tok));
                 return;
             }
         }
@@ -321,15 +322,15 @@ namespace ChronosLib.Doom.UDMF.Internal {
             while (tok.Type == UDMFTokenType.IDENTIFIER) {
                 tok = scanner.Scan ();
                 if (tok.Type != UDMFTokenType.IDENTIFIER) {
-                    Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.IDENTIFIER), 0x1001, tok));
+                    Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.ToString ().Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.IDENTIFIER), 0x1001, tok));
                     return;
                 }
 
-                if (info != null && info.Value.Assignments.TryGetValue (tok.Text, out var assignment))
+                if (info != null && info.Value.Assignments.TryGetValue (tok.Text.ToString (), out var assignment))
                     ParseAssignment_Expr (block, assignment);
                 else {
                     var val = ParseAssignment_Expr (block, null);
-                    block.UnknownAssignments.Add (tok.Text, val.Value.Text);
+                    block.UnknownAssignments.Add (tok.Text.ToString (), val.Value.Text.ToString ());
                 }
 
                 tok = scanner.LookAhead ();
@@ -343,91 +344,92 @@ namespace ChronosLib.Doom.UDMF.Internal {
         private UDMFToken? ParseAssignment_Expr (object block, ParserInfo.IAssignmentInfo data) {
             UDMFToken tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.EQSIGN) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.EQSIGN), 0x1001, tok));
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.ToString ().Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.EQSIGN), 0x1001, tok));
                 return null;
             }
 
             var valTok = scanner.Scan ();
+            var valTokText = valTok.Text;
             if (data != null) {
                 switch (Type.GetTypeCode (data.PropType)) {
                     case TypeCode.Boolean: {
                         bool val;
 
-                        if (valTok.Text.Equals ("true", StringComparison.InvariantCultureIgnoreCase))
+                        if (valTokText.Equals ("true".AsSpan (), StringComparison.InvariantCultureIgnoreCase))
                             val = true;
-                        else if (valTok.Text.Equals ("false", StringComparison.InvariantCultureIgnoreCase))
+                        else if (valTokText.Equals ("false".AsSpan (), StringComparison.InvariantCultureIgnoreCase))
                             val = false;
                         else {
-                            Errors.Add (new UDMFParseError ("Expected bool, got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected bool, got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
 
-                        SetAssignmentInfo<bool> (data, block, val);
+                        SetAssignmentInfo (data, block, val);
                     }
                     break;
 
                     case TypeCode.Int32: {
                         if (valTok.Type != UDMFTokenType.INTEGER) {
-                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
-                        int.TryParse (valTok.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
-                        SetAssignmentInfo<int> (data, block, val);
+                        int.TryParse (valTokText.ToString (), NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
+                        SetAssignmentInfo (data, block, val);
                     }
                     break;
                     case TypeCode.Int64: {
                         if (valTok.Type != UDMFTokenType.INTEGER) {
-                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
-                        long.TryParse (valTok.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
-                        SetAssignmentInfo<long> (data, block, val);
+                        long.TryParse (valTokText.ToString (), NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
+                        SetAssignmentInfo (data, block, val);
                     }
                     break;
                     case TypeCode.UInt32: {
                         if (valTok.Type != UDMFTokenType.INTEGER) {
-                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
-                        uint.TryParse (valTok.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
-                        SetAssignmentInfo<uint> (data, block, val);
+                        uint.TryParse (valTokText.ToString (), NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
+                        SetAssignmentInfo (data, block, val);
                     }
                     break;
                     case TypeCode.UInt64: {
                         if (valTok.Type != UDMFTokenType.INTEGER) {
-                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.INTEGER) + ", got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
-                        ulong.TryParse (valTok.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
-                        SetAssignmentInfo<ulong> (data, block, val);
+                        ulong.TryParse (valTokText.ToString (), NumberStyles.Integer, CultureInfo.InvariantCulture, out var val);
+                        SetAssignmentInfo (data, block, val);
                     }
                     break;
 
                     case TypeCode.Single: {
                         if (valTok.Type != UDMFTokenType.FLOAT && valTok.Type != UDMFTokenType.INTEGER) {
-                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
-                        float.TryParse (valTok.Text, NumberStyles.Integer | NumberStyles.Float, CultureInfo.InvariantCulture, out var val);
-                        SetAssignmentInfo<float> (data, block, val);
+                        float.TryParse (valTokText.ToString (), NumberStyles.Integer | NumberStyles.Float, CultureInfo.InvariantCulture, out var val);
+                        SetAssignmentInfo (data, block, val);
                     }
                     break;
                     case TypeCode.Double: {
                         if (valTok.Type != UDMFTokenType.FLOAT && valTok.Type != UDMFTokenType.INTEGER) {
-                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.FLOAT) + ", got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
-                        double.TryParse (valTok.Text, NumberStyles.Integer | NumberStyles.Float, CultureInfo.InvariantCulture, out var val);
-                        SetAssignmentInfo<double> (data, block, val);
+                        double.TryParse (valTokText.ToString (), NumberStyles.Integer | NumberStyles.Float, CultureInfo.InvariantCulture, out var val);
+                        SetAssignmentInfo (data, block, val);
                     }
                     break;
 
                     case TypeCode.String:
                         if (valTok.Type != UDMFTokenType.QUOTED_STRING) {
-                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.QUOTED_STRING) + ", got " + UDMFToken.TokenTypeToString (tok.Type) + ".", 0x1001, tok));
+                            Errors.Add (new UDMFParseError ("Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.QUOTED_STRING) + ", got " + UDMFToken.TokenTypeToString (valTok.Type) + ".", 0x1001, valTok));
                             break;
                         }
-                        SetAssignmentInfo<string> (data, block, valTok.Text);
+                        SetAssignmentInfo (data, block, valTokText.Slice (1, valTokText.Length - 2).ToString ().Replace ("\\\"", "\"").Replace (@"\\", @"\"));
                         break;
 
                     default:
@@ -437,7 +439,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
             tok = scanner.Scan ();
             if (tok.Type != UDMFTokenType.SEMICOLON) {
-                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.SEMICOLON), 0x1001, tok));
+                Errors.Add (new UDMFParseError ("Unexpected token '" + tok.Text.ToString ().Replace ("\n", "") + "' found. Expected " + UDMFToken.TokenTypeToString (UDMFTokenType.SEMICOLON), 0x1001, tok));
                 return null;
             }
 
