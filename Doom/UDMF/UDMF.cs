@@ -79,11 +79,11 @@ namespace ChronosLib.Doom.UDMF {
         #endregion
     }
 
-    public class UDMFParser<T>
+    public class UDMFParser<T> : IDisposable
         where T : UDMFParsedMapData {
         #region ================== Instance fields
 
-        protected Type dataType = typeof (T);
+        protected Type dataType;
         internal UDMFParser_Internal parser;
 
         #endregion
@@ -92,11 +92,15 @@ namespace ChronosLib.Doom.UDMF {
 
         public List<UDMFParseError> Errors { get; protected set; }
 
+        public bool IsDisposed { get; private set; }
+
         #endregion
 
         #region ================== Constructors
 
         public UDMFParser () {
+            IsDisposed = false;
+            dataType = typeof (T);
             parser = new UDMFParser_Internal (new UDMFScanner ());
         }
 
@@ -126,6 +130,24 @@ namespace ChronosLib.Doom.UDMF {
         }
 
         #endregion
+
+        #endregion
+
+        #region ================== IDisposable support
+
+        protected virtual void Dispose (bool disposing) {
+            if (!IsDisposed) {
+                parser?.Dispose ();
+
+                IsDisposed = true;
+            }
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose () {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose (true);
+        }
 
         #endregion
     }

@@ -22,7 +22,7 @@ namespace ChronosLib.Doom.UDMF {
     public class UDMFVertex : IUDMFBlock {
         #region ================== Instance properties
 
-        public Dictionary<string, string> UnknownAssignments { get; set; }
+        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
         [UDMFData ("x")]
         public float X { get; set; }
@@ -35,7 +35,7 @@ namespace ChronosLib.Doom.UDMF {
     public class UDMFLinedef : IUDMFBlock {
         #region ================== Instance properties
 
-        public Dictionary<string, string> UnknownAssignments { get; set; }
+        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
         [UDMFData ("id")]
         public int Id { get; set; } = -1;
@@ -154,7 +154,7 @@ namespace ChronosLib.Doom.UDMF {
     public class UDMFSidedef : IUDMFBlock {
         #region ================== Instance properties
 
-        public Dictionary<string, string> UnknownAssignments { get; set; }
+        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
         #region Offsets
 
@@ -188,7 +188,7 @@ namespace ChronosLib.Doom.UDMF {
     public class UDMFSector : IUDMFBlock {
         #region ================== Instance properties
 
-        public Dictionary<string, string> UnknownAssignments { get; set; }
+        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
         #region Heights
 
@@ -226,7 +226,7 @@ namespace ChronosLib.Doom.UDMF {
     public class UDMFThing : IUDMFBlock {
         #region ================== Instance properties
 
-        public Dictionary<string, string> UnknownAssignments { get; set; }
+        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
         [UDMFData ("id")]
         public int Id { get; set; } = 0;
