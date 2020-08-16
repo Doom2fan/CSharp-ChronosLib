@@ -21,7 +21,6 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Reflection;
 using ChronosLib.Reflection;
 using Collections.Pooled;
@@ -170,6 +169,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
         #region ================== Instance fields
 
         private static Dictionary<Type, ParserInfo> parserInfoList;
+        private static StringPool namePool;
 
         private PooledDictionary<string, UDMFUnknownAssignment> unknownGlobalAssignmentsPooled;
         private PooledDictionary<string, UDMFUnknownAssignment> unknownAssignmentsPooled;
@@ -187,8 +187,12 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         #region ================== Constructors
 
-        public UDMFParser_Internal (UDMFScanner scanner) {
+        static UDMFParser_Internal () {
             parserInfoList = new Dictionary<Type, ParserInfo> ();
+            namePool = new StringPool ();
+        }
+
+        public UDMFParser_Internal (UDMFScanner scanner) {
             this.scanner = scanner;
             Errors = new List<UDMFParseError> ();
 
@@ -379,7 +383,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
             }
 
             var ident = tok;
-            var identText = ident.Text.ToString ();
+            var identText = namePool.GetOrCreate (ident.Text);
 
             tok = scanner.LookAhead ();
             switch (tok.Type) {
@@ -447,12 +451,13 @@ namespace ChronosLib.Doom.UDMF.Internal {
                     return;
                 }
 
-                if (info != null && info.Value.Assignments.TryGetValue (tok.Text.ToString (), out var assignment))
+                var tokStr = namePool.GetOrCreate (tok.Text);
+                if (info != null && info.Value.Assignments.TryGetValue (namePool.GetOrCreate (tokStr), out var assignment))
                     ParseAssignment_Expr (block, assignment);
                 else {
                     var val = ParseAssignment_Expr (block, null);
 
-                    unknownAssignmentsPooled.Add (tok.Text.ToString (), GetUnknownAssignment (val.Value));
+                    unknownAssignmentsPooled.Add (tokStr, GetUnknownAssignment (val.Value));
                 }
 
                 tok = scanner.LookAhead ();
