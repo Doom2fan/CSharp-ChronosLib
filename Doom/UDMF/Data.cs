@@ -32,7 +32,7 @@ namespace ChronosLib.Doom.UDMF {
     /// <summary>A list of UDMF blocks.</summary>
     /// <typeparam name="T">The block's type.</typeparam>
     public class UDMFBlockList<T> : List<T>, IUDMFBlockList
-        where T: IUDMFBlock {
+        where T : IUDMFBlock {
         #region ================== Constructors
 
         public UDMFBlockList () : base () { }
@@ -190,6 +190,117 @@ namespace ChronosLib.Doom.UDMF {
 
         #endregion
     }
+
+    public static class UDMFBlockExtensions {
+        #region ================== Instance methods
+
+        /// <summary>Gets an unknown assignment's value as a bool.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a bool containing the value of the assignment -or- null if the assignment doesn't exist
+        /// or is not of type Bool.</returns>
+        public static bool? GetUnknownAssignmentBool<T> (this T self, string assignmentName)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.Bool)
+                return assignment.GetBool ();
+
+            return null;
+        }
+
+        /// <summary>Gets an unknown assignment's value as a bool.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a bool containing the value of the assignment -or- <paramref name="defaultVal"/> if the
+        /// assignment doesn't exist or is not of type Bool.</returns>
+        public static bool GetUnknownAssignmentBool<T> (this T self, string assignmentName, bool defaultVal)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.Bool)
+                return assignment.GetBool ();
+
+            return defaultVal;
+        }
+
+        /// <summary>Gets an unknown assignment's value as an int.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a long containing the value of the assignment -or- null if the assignment doesn't exist
+        /// or is not of type Int.</returns>
+        public static long? GetUnknownAssignmentInt<T> (this T self, string assignmentName)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.Int)
+                return assignment.GetInt ();
+
+            return null;
+        }
+
+        /// <summary>Gets an unknown assignment's value as an int.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a long containing the value of the assignment -or- <paramref name="defaultVal"/> if the
+        /// assignment doesn't exist or is not of type Int.</returns>
+        public static long GetUnknownAssignmentInt<T> (this T self, string assignmentName, long defaultVal)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.Int)
+                return assignment.GetInt ();
+
+            return defaultVal;
+        }
+
+        /// <summary>Gets an unknown assignment's value as a float.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a double containing the value of the assignment -or- null if the assignment doesn't exist
+        /// or is not of type Float.</returns>
+        public static double? GetUnknownAssignmentFloat<T> (this T self, string assignmentName)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.Float)
+                return assignment.GetFloat ();
+
+            return null;
+        }
+
+        /// <summary>Gets an unknown assignment's value as a float.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a double containing the value of the assignment -or- <paramref name="defaultVal"/> if the
+        /// assignment doesn't exist or is not of type Float.</returns>
+        public static double GetUnknownAssignmentFloat<T> (this T self, string assignmentName, double defaultVal)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.Float)
+                return assignment.GetFloat ();
+
+            return defaultVal;
+        }
+
+        /// <summary>Gets an unknown assignment's value as a string.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a ReadOnlySpan<char></char> containing the value of the assignment -or-
+        /// <paramref name="defaultVal"/> if the assignment doesn't exist or is not of type String.</returns>
+        public static ReadOnlySpan<char> GetUnknownAssignmentString<T> (this T self, string assignmentName, ReadOnlySpan<char> defaultVal)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.String)
+                return assignment.GetString ();
+
+            return defaultVal;
+        }
+
+        /// <summary>Gets an unknown assignment's value as an identifier.</summary>
+        /// <param name="assignmentName">The assignment's name.</param>
+        /// <returns>Returns a ReadOnlySpan<char></char> containing the value of the assignment -or-
+        /// <paramref name="defaultVal"/> if the assignment doesn't exist or is not of type Identifier.</returns>
+        public static ReadOnlySpan<char> GetUnknownAssignmentIdentifier<T> (this T self, string assignmentName, ReadOnlySpan<char> defaultVal)
+            where T : IUDMFBlock {
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
+                assignment.Type == UDMFUnknownAssignment.AssignmentType.Identifier)
+                return assignment.GetIdentifier ();
+
+            return defaultVal;
+        }
+
+        #endregion
+    }
+
     public class UDMFUnknownBlock : IUDMFBlock {
         #region ================== Instance properties
 
