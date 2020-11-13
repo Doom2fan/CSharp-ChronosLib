@@ -180,7 +180,7 @@ namespace ChronosLib.Pooled {
             items = emptyArray;
         }
 
-        private void EnsureCapacity (int min) {
+        public void EnsureCapacity (int min) {
             if (items.Length < min) {
                 int newCapacity = items.Length == 0 ? defaultCapacity : items.Length * 2;
                 // Allow the list to grow to maximum possible capacity (~2G elements) before encountering overflow.
