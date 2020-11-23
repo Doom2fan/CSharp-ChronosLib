@@ -128,7 +128,9 @@ namespace ChronosLib.Doom.WAD {
         #region ================== Interfaces
 
         public bool Contains (WADLump item) => lumps.Contains (item);
-        public IEnumerator<WADLump> GetEnumerator () => lumps.GetEnumerator ();
+
+        public List<WADLump>.Enumerator GetEnumerator () => lumps.GetEnumerator ();
+        IEnumerator<WADLump> IEnumerable<WADLump>.GetEnumerator () => lumps.GetEnumerator ();
         IEnumerator IEnumerable.GetEnumerator () => lumps.GetEnumerator ();
 
         public void Add (WADLump item) => throw new NotImplementedException ();
@@ -251,7 +253,8 @@ namespace ChronosLib.Doom.WAD {
             protected internal set => Lumps [i] = value;
         }
 
-        public IEnumerator<WADLump> GetEnumerator () => Lumps.GetEnumerator ();
+        public List<WADLump>.Enumerator GetEnumerator () => Lumps.GetEnumerator ();
+        IEnumerator<WADLump> IEnumerable<WADLump>.GetEnumerator () => Lumps.GetEnumerator ();
         IEnumerator IEnumerable.GetEnumerator () => Lumps.GetEnumerator ();
 
         #region IDisposable

@@ -149,7 +149,7 @@ namespace ChronosLib.Pooled {
                 if (items == null)
                     return emptyArray;
 
-                return items [0 .. size];
+                return items.AsSpan (0, size);
             }
         }
 
@@ -311,7 +311,11 @@ namespace ChronosLib.Pooled {
 
         #region Enumeration
 
-        public IEnumerator<T> GetEnumerator () {
+        public Enumerator GetEnumerator () {
+            return new Enumerator (this);
+        }
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator () {
             return new Enumerator (this);
         }
 
