@@ -218,6 +218,17 @@ namespace ChronosLib.Pooled {
             size += newItems.Length;
         }
 
+        public Span<T> AddSpan (int count) {
+            EnsureCapacity (size + count);
+
+            var span = items.AsSpan (size, count);
+
+            version++;
+            size += count;
+
+            return span;
+        }
+
         /// <inheritdoc/>
         public void Insert (int index, T item) {
             // Note that insertions at the end are legal.
@@ -398,7 +409,7 @@ namespace ChronosLib.Pooled {
                 return false;
             }
 
-            void IEnumerator.Reset () {
+            public void Reset () {
                 if (version != list.version)
                     throw new InvalidOperationException ("Collection was modified during enumeration.");
 
