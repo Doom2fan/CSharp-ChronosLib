@@ -208,6 +208,27 @@ namespace ChronosLib.Pooled {
         }
 
         /// <inheritdoc/>
+        public void Add (ref T item) {
+            EnsureCapacity (size + 1);
+
+            items [size] = item;
+
+            version++;
+            size++;
+        }
+
+        /// <inheritdoc/>
+        public void AddRange (StructPooledList<T> newItems) {
+            int startPos = size;
+            EnsureCapacity (size + newItems.Count);
+
+            Array.Copy (newItems.items, 0, items, startPos, newItems.Count);
+
+            version++;
+            size += newItems.Count;
+        }
+
+        /// <inheritdoc/>
         public void AddRange (ReadOnlySpan<T> newItems) {
             int startPos = size;
             EnsureCapacity (size + newItems.Length);
