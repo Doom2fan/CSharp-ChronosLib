@@ -42,6 +42,61 @@ namespace ChronosLib.Pooled {
         }
     }
 
+    public struct PooledArray<T> : IDisposable {
+        public static PooledArray<T> GetArray (int length) {
+            return GetArray (length, ArrayPool<T>.Shared);
+        }
+
+        public static PooledArray<T> GetArray (int length, ArrayPool<T> pool) {
+            var newArr = new PooledArray<T> {
+                arrayPool = pool,
+                RealLength = length,
+                Array = pool.Rent (length),
+            };
+
+            return newArr;
+        }
+
+        #region ================== Instance fields
+
+        private ArrayPool<T> arrayPool;
+
+        #endregion
+
+        #region ================== Instance properties
+
+        public int RealLength { get; private set; }
+        public T [] Array { get; private set; }
+
+        public Span<T> Span => Array.AsSpan (0, RealLength);
+
+        #endregion
+
+        #region ================== Casts
+
+        public static implicit operator T [] (PooledArray<T> array) => array.Array;
+        public static implicit operator Span<T> (PooledArray<T> array) => array.Array.AsSpan (0, array.RealLength);
+        public static implicit operator ReadOnlySpan<T> (PooledArray<T> array) => array.Array.AsSpan (0, array.RealLength);
+
+        #endregion
+
+        #region ================== IDisposable support
+
+        private bool disposedValue;
+
+        public void Dispose () {
+            if (!disposedValue) {
+                arrayPool.Return (Array);
+                RealLength = 0;
+                Array = System.Array.Empty<T> ();
+
+                disposedValue = true;
+            }
+        }
+
+        #endregion
+    }
+
     public struct StructPooledList<T> : IList<T>, IReadOnlyList<T>, IList, IDisposable {
         #region ================== Constants
 
