@@ -364,6 +364,19 @@ namespace ChronosLib.Pooled {
             }
         }
 
+        public void RemoveEnd (int count) {
+            if ((uint) count > (uint) size)
+                throw new ArgumentOutOfRangeException (nameof (count), "Count is out of range.");
+
+            size -= count;
+            version++;
+
+            if (clearOnFree) {
+                // Clear the removed elements so that the gc can reclaim the reference.
+                Array.Clear (items, size - count - 1, count);
+            }
+        }
+
         #endregion
 
         #region Search
