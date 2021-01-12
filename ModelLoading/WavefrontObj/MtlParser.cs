@@ -117,9 +117,6 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             else if (specifier.Equals ("Ks", StringComparison.OrdinalIgnoreCase))
                 curMaterial.SpecularReflectivity = ParseVector3 (ref line, "Ks");
 
-            else if (specifier.Equals ("Ke", StringComparison.OrdinalIgnoreCase))
-                curMaterial.EmissiveCoefficient = ParseVector3 (ref line, "Ke");
-
             else if (specifier.Equals ("Tf", StringComparison.OrdinalIgnoreCase))
                 curMaterial.TransmissionFilter = ParseVector3 (ref line, "Tf");
 
@@ -158,6 +155,27 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
 
             else if (specifier.Equals ("map_d", StringComparison.OrdinalIgnoreCase))
                 curMaterial.AlphaMap = ParseText (ref line, "map_d").ToString ();
+
+            else if (specifier.Equals ("Pr", StringComparison.OrdinalIgnoreCase))
+                curMaterial.Roughness = ParseFloat (ref line, "Pr");
+
+            else if (specifier.Equals ("Pm", StringComparison.OrdinalIgnoreCase))
+                curMaterial.Metallicness = ParseFloat (ref line, "Pm");
+
+            else if (specifier.Equals ("Ke", StringComparison.OrdinalIgnoreCase))
+                curMaterial.EmissiveCoefficient = ParseVector3 (ref line, "Ke");
+
+            else if (specifier.Equals ("map_Pr", StringComparison.OrdinalIgnoreCase))
+                curMaterial.RoughnessTexture = ParseText (ref line, "map_Pr").ToString ();
+
+            else if (specifier.Equals ("map_Pm", StringComparison.OrdinalIgnoreCase))
+                curMaterial.MetallicnessTexture = ParseText (ref line, "map_Pm").ToString ();
+
+            else if (specifier.Equals ("map_Ke", StringComparison.OrdinalIgnoreCase))
+                curMaterial.EmissiveTexture = ParseText (ref line, "map_Ke").ToString ();
+
+            else if (specifier.Equals ("norm", StringComparison.OrdinalIgnoreCase))
+                curMaterial.NormalMap = ParseText (ref line, "norm").ToString ();
 
             else {
                 throw new MtlParseException (
@@ -221,7 +239,6 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         public Vector3 AmbientReflectivity { get; internal set; }
         public Vector3 DiffuseReflectivity { get; internal set; }
         public Vector3 SpecularReflectivity { get; internal set; }
-        public Vector3 EmissiveCoefficient { get; internal set; }
         public Vector3 TransmissionFilter { get; internal set; }
         public int IlluminationModel { get; internal set; }
         public float Opacity { get; internal set; }
@@ -235,6 +252,15 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         public string SpecularHighlightTexture { get; internal set; }
         public string AlphaMap { get; internal set; }
         public string BumpMap { get; internal set; }
+
+        public float Roughness { get; internal set; }
+        public float Metallicness { get; internal set; }
+        public Vector3 EmissiveCoefficient { get; internal set; }
+
+        public string RoughnessTexture { get; internal set; }
+        public string MetallicnessTexture { get; internal set; }
+        public string EmissiveTexture { get; internal set; }
+        public string NormalMap { get; internal set; }
 
         #endregion
 
