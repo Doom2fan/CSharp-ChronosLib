@@ -38,6 +38,15 @@ namespace ChronosLib.Doom.UDMF {
         public Type GetBlockType ()
             => typeof (T);
 
+        public List<T> ToList () {
+            var ret = new List<T> (Count);
+
+            foreach (var item in this)
+                ret.Add (item);
+
+            return ret;
+        }
+
         #endregion
     }
 
@@ -119,6 +128,16 @@ namespace ChronosLib.Doom.UDMF {
             stringValueSource = null;
             stringValueStart = 0;
             stringValueLength = 0;
+        }
+
+        public UDMFUnknownAssignment (string source, bool identifier) {
+            Type = identifier ? AssignmentType.Identifier : AssignmentType.String;
+            stringValueSource = source;
+            stringValueStart = 0;
+            stringValueLength = source.Length;
+
+            intValue = 0;
+            floatValue = float.NaN;
         }
 
         public UDMFUnknownAssignment (string source, int start, int length, bool identifier) {
