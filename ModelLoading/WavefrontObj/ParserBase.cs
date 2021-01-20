@@ -20,9 +20,9 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             parserWhitespaceChars = whiteChars;
         }
 
-        protected ReadOnlySpan<char> ReadUntil (ref ReadOnlySpan<char> source, ReadOnlySpan<char> values) {
+        protected ReadOnlySpan<char> ReadIgnoreWhitespace (ref ReadOnlySpan<char> source) {
             int charIdx = -1;
-            foreach (var value in values)
+            foreach (var value in parserWhitespaceChars)
                 charIdx = Math.Max (charIdx, source.IndexOf (value));
 
             if (charIdx == -1)
@@ -33,7 +33,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             int endIdx = charIdx;
             while (endIdx < source.Length) {
                 bool foundVal = false;
-                foreach (var value in values) {
+                foreach (var value in parserWhitespaceChars) {
                     if (source [endIdx] == value) {
                         foundVal = true;
                         break;
@@ -51,10 +51,22 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             return text;
         }
 
+        protected ReadOnlySpan<char> ReadUntil (ref ReadOnlySpan<char> source, char value) {
+            int charIdx = source.IndexOf (value);
+
+            if (charIdx == -1)
+                charIdx = source.Length;
+
+            var text = source.Slice (0, charIdx);
+            source = source.Slice (Math.Min (charIdx + 1, source.Length));
+
+            return text;
+        }
+
         protected Vector3 ParseVector3 (ref ReadOnlySpan<char> source, string location) {
-            var xStr = ReadUntil (ref source, parserWhitespaceChars);
-            var yStr = ReadUntil (ref source, parserWhitespaceChars);
-            var zStr = ReadUntil (ref source, parserWhitespaceChars);
+            var xStr = ReadIgnoreWhitespace (ref source);
+            var yStr = ReadIgnoreWhitespace (ref source);
+            var zStr = ReadIgnoreWhitespace (ref source);
 
             try {
                 float x = float.Parse (xStr, provider: CultureInfo.InvariantCulture);
@@ -68,8 +80,8 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         protected Vector2 ParseVector2 (ref ReadOnlySpan<char> source, string location) {
-            var xStr = ReadUntil (ref source, parserWhitespaceChars);
-            var yStr = ReadUntil (ref source, parserWhitespaceChars);
+            var xStr = ReadIgnoreWhitespace (ref source);
+            var yStr = ReadIgnoreWhitespace (ref source);
 
             try {
                 float x = float.Parse (xStr, provider: CultureInfo.InvariantCulture);
@@ -82,7 +94,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         protected int ParseInt (ref ReadOnlySpan<char> source, string location) {
-            var valStr = ReadUntil (ref source, parserWhitespaceChars);
+            var valStr = ReadIgnoreWhitespace (ref source);
 
             try {
                 int i = int.Parse (valStr, provider: CultureInfo.InvariantCulture);
@@ -93,7 +105,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         protected float ParseFloat (ref ReadOnlySpan<char> source, string location) {
-            var valStr = ReadUntil (ref source, parserWhitespaceChars);
+            var valStr = ReadIgnoreWhitespace (ref source);
 
             try {
                 float f = float.Parse (valStr, provider: CultureInfo.InvariantCulture);
@@ -104,7 +116,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         protected ReadOnlySpan<char> ParseText (ref ReadOnlySpan<char> source, string location) {
-            var valStr = ReadUntil (ref source, parserWhitespaceChars);
+            var valStr = ReadIgnoreWhitespace (ref source);
 
             if (valStr.Length < 1)
                 throw CreateParseException (location, null);

@@ -11,9 +11,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using ChronosLib.Pooled;
 
 namespace ChronosLib.ModelLoading.WavefrontObj {
-    public class MtlParser : ParserBase {
+    public class MtlParser : ParserBase, IDisposable {
         #region ================== Static fields
 
         protected static readonly string whitespaceChars = " \t";
@@ -22,7 +24,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
 
         #region ================== Instance fields
 
-        protected readonly List<MaterialDefinition> materials;
+        protected StructPooledList<MaterialDefinition> materials;
         protected MaterialDefinition curMaterial;
 
         #endregion
@@ -30,7 +32,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         #region ================== Constructors
 
         public MtlParser () : base (whitespaceChars) {
-            materials = new List<MaterialDefinition> ();
+            materials = new StructPooledList<MaterialDefinition> (CL_ClearMode.Auto);
 
             Reset ();
         }
@@ -43,6 +45,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
 
         public void Reset () {
             materials.Clear ();
+            materials.Capacity = 0;
             curMaterial = null;
         }
 
@@ -90,6 +93,10 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         #region Protected methods
 
         protected void Process (ReadOnlySpan<char> line, int lineNum) {
+            static bool CheckSpecifier (ReadOnlySpan<char> specifier, ReadOnlySpan<char> testedSpec) {
+                return specifier.Equals (testedSpec, StringComparison.OrdinalIgnoreCase);
+            }
+
             currentLine = lineNum;
 
             // Remove comments
@@ -101,80 +108,78 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             if (line.Length == 0)
                 return;
 
-            var specifier = ReadUntil (ref line, whitespaceChars);
+            var specifier = ReadIgnoreWhitespace (ref line);
 
-            if (specifier.Equals ("newmtl", StringComparison.OrdinalIgnoreCase)) {
+            if (CheckSpecifier (specifier, "newmtl")) {
                 FinalizeCurrentMaterial ();
                 curMaterial = new MaterialDefinition (ParseText (ref line, "newmtl").ToString ());
-            }
-
-            else if (specifier.Equals ("Ka", StringComparison.OrdinalIgnoreCase))
+            } else if (CheckSpecifier (specifier, "Ka"))
                 curMaterial.AmbientReflectivity = ParseVector3 (ref line, "Ka");
 
-            else if (specifier.Equals ("Kd", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Kd"))
                 curMaterial.DiffuseReflectivity = ParseVector3 (ref line, "Kd");
 
-            else if (specifier.Equals ("Ks", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Ks"))
                 curMaterial.SpecularReflectivity = ParseVector3 (ref line, "Ks");
 
-            else if (specifier.Equals ("Tf", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Tf"))
                 curMaterial.TransmissionFilter = ParseVector3 (ref line, "Tf");
 
-            else if (specifier.Equals ("illum", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "illum"))
                 curMaterial.IlluminationModel = ParseInt (ref line, "illum");
 
-            else if (specifier.Equals ("d", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "d"))
                 curMaterial.Opacity = ParseFloat (ref line, "d");
 
-            else if (specifier.Equals ("Tr", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Tr"))
                 curMaterial.Opacity = 1f - ParseFloat (ref line, "Tr");
 
-            else if (specifier.Equals ("Ns", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Ns"))
                 curMaterial.SpecularExponent = ParseFloat (ref line, "Ns");
 
-            else if (specifier.Equals ("sharpness", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "sharpness"))
                 curMaterial.Sharpness = ParseFloat (ref line, "sharpness");
 
-            else if (specifier.Equals ("Ni", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Ni"))
                 curMaterial.OpticalDensity = ParseFloat (ref line, "Ni"); // IoR
 
-            else if (specifier.Equals ("map_Ka", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_Ka"))
                 curMaterial.AmbientTexture = ParseText (ref line, "map_Ka").ToString ();
 
-            else if (specifier.Equals ("map_Kd", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_Kd"))
                 curMaterial.DiffuseTexture = ParseText (ref line, "map_Kd").ToString ();
 
-            else if (specifier.Equals ("map_Ks", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_Ks"))
                 curMaterial.SpecularColorTexture = ParseText (ref line, "map_Ks").ToString ();
 
-            else if (specifier.Equals ("map_Ns", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_Ns"))
                 curMaterial.SpecularHighlightTexture = ParseText (ref line, "map_Ns").ToString ();
 
-            else if (specifier.Equals ("map_bump", StringComparison.OrdinalIgnoreCase) || specifier.Equals ("bump", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_bump") || CheckSpecifier (specifier, "bump"))
                 curMaterial.BumpMap = ParseText (ref line, "bump").ToString ();
 
-            else if (specifier.Equals ("map_d", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_d"))
                 curMaterial.AlphaMap = ParseText (ref line, "map_d").ToString ();
 
-            else if (specifier.Equals ("Pr", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Pr"))
                 curMaterial.Roughness = ParseFloat (ref line, "Pr");
 
-            else if (specifier.Equals ("Pm", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Pm"))
                 curMaterial.Metallicness = ParseFloat (ref line, "Pm");
 
-            else if (specifier.Equals ("Ke", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "Ke"))
                 curMaterial.EmissiveCoefficient = ParseVector3 (ref line, "Ke");
 
-            else if (specifier.Equals ("map_Pr", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_Pr"))
                 curMaterial.RoughnessTexture = ParseText (ref line, "map_Pr").ToString ();
 
-            else if (specifier.Equals ("map_Pm", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_Pm"))
                 curMaterial.MetallicnessTexture = ParseText (ref line, "map_Pm").ToString ();
 
-            else if (specifier.Equals ("map_Ke", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "map_Ke"))
                 curMaterial.EmissiveTexture = ParseText (ref line, "map_Ke").ToString ();
 
-            else if (specifier.Equals ("norm", StringComparison.OrdinalIgnoreCase))
+            else if (CheckSpecifier (specifier, "norm"))
                 curMaterial.NormalMap = ParseText (ref line, "norm").ToString ();
 
             else {
@@ -199,6 +204,29 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         #endregion
+
+        #endregion
+
+        #region ================== IDisposable Support
+
+        public bool IsDisposed {
+            [MethodImpl (MethodImplOptions.AggressiveInlining)]
+            get;
+            [MethodImpl (MethodImplOptions.AggressiveInlining)]
+            private set;
+        }
+
+        protected virtual void DoDispose () {
+            if (!IsDisposed) {
+                materials.Dispose ();
+
+                IsDisposed = true;
+            }
+        }
+
+        public void Dispose () {
+            DoDispose ();
+        }
 
         #endregion
     }
