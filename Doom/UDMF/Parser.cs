@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using ChronosLib.Reflection;
+using ChronosLib.StringPooling;
 using Collections.Pooled;
 
 namespace ChronosLib.Doom.UDMF.Internal {

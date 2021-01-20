@@ -13,7 +13,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using MurmurHash.Net;
 
-namespace ChronosLib {
+namespace ChronosLib.StringPooling {
     public class StringPool {
         #region ================== Constants
 
