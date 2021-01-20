@@ -43,6 +43,14 @@ namespace ChronosLib.Pooled {
     }
 
     public struct PooledArray<T> : IDisposable {
+        public static PooledArray<T> Empty () {
+            return new PooledArray<T> {
+                Array = System.Array.Empty<T> (),
+                arrayPool = null,
+                RealLength = 0,
+            };
+        }
+
         public static PooledArray<T> GetArray (int length) {
             return GetArray (length, ArrayPool<T>.Shared);
         }
@@ -59,7 +67,7 @@ namespace ChronosLib.Pooled {
 
         #region ================== Instance fields
 
-        private ArrayPool<T> arrayPool;
+        private ArrayPool<T>? arrayPool;
 
         #endregion
 
@@ -74,7 +82,7 @@ namespace ChronosLib.Pooled {
 
         #region ================== Casts
 
-        public static implicit operator T [] (PooledArray<T> array) => array.Array;
+        public static explicit operator T [] (PooledArray<T> array) => array.Array;
         public static implicit operator Span<T> (PooledArray<T> array) => array.Array.AsSpan (0, array.RealLength);
         public static implicit operator ReadOnlySpan<T> (PooledArray<T> array) => array.Array.AsSpan (0, array.RealLength);
 
@@ -86,7 +94,7 @@ namespace ChronosLib.Pooled {
 
         public void Dispose () {
             if (!disposedValue) {
-                arrayPool.Return (Array);
+                arrayPool?.Return (Array);
                 RealLength = 0;
                 Array = System.Array.Empty<T> ();
 
@@ -431,6 +439,16 @@ namespace ChronosLib.Pooled {
 
             var arr = new T [size];
             CopyTo (arr, 0);
+
+            return arr;
+        }
+
+        public PooledArray<T> ToPooledArray () {
+            if (size == 0)
+                return PooledArray<T>.Empty ();
+
+            var arr = PooledArray<T>.GetArray (size);
+            CopyTo (arr.Array, 0);
 
             return arr;
         }
