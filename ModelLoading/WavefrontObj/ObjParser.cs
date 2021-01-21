@@ -212,16 +212,28 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         protected void ProcessFaceLine (ref ReadOnlySpan<char> line) {
-            var first = ReadIgnoreWhitespace (ref line);
-            ObjFile.FaceVertex faceVertex0 = ParseFaceVertex (ref first);
+            using var verts = new StructPooledList<ObjFile.FaceVertex> (CL_ClearMode.Auto);
 
             while (line.Length > 0) {
-                var second = ReadIgnoreWhitespace (ref line);
-                ObjFile.FaceVertex faceVertex1 = ParseFaceVertex (ref second);
-                var third = ReadIgnoreWhitespace (ref line);
-                ObjFile.FaceVertex faceVertex2 = ParseFaceVertex (ref third);
+                var text = ReadIgnoreWhitespace (ref line);
+                var vertex = ParseFaceVertex (ref text);
 
-                currentGroupFaces.Add (new ObjFile.Face (faceVertex0, faceVertex1, faceVertex2, currentSmoothingGroup));
+                verts.Add (vertex);
+            }
+
+            var otherVertsSpan = verts.Span;
+
+            var firstVert = otherVertsSpan [^1];
+            var lastVert = otherVertsSpan [^2];
+            otherVertsSpan = otherVertsSpan [0..^2];
+
+            while (otherVertsSpan.Length > 0) {
+                var thisVert = otherVertsSpan [^1];
+
+                currentGroupFaces.Add (new ObjFile.Face (firstVert, lastVert, thisVert, currentSmoothingGroup));
+
+                lastVert = thisVert;
+                otherVertsSpan = otherVertsSpan [0..^1];
             }
         }
 
@@ -548,9 +560,9 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
                 var face = facesSpan [i];
 
                 var triSpan = verticesList.AddSpan (3);
-                triSpan [2] = ConstructVertex (face.Vertex0, face.Vertex1, face.Vertex2);
+                triSpan [0] = ConstructVertex (face.Vertex0, face.Vertex1, face.Vertex2);
                 triSpan [1] = ConstructVertex (face.Vertex1, face.Vertex2, face.Vertex0);
-                triSpan [0] = ConstructVertex (face.Vertex2, face.Vertex0, face.Vertex1);
+                triSpan [2] = ConstructVertex (face.Vertex2, face.Vertex0, face.Vertex1);
             }
 
             return verticesList.ToPooledArray ();
