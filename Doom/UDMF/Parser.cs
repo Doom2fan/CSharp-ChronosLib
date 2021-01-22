@@ -166,7 +166,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         private PooledDictionary<string, UDMFUnknownAssignment> unknownGlobalAssignmentsPooled;
         private PooledDictionary<string, UDMFUnknownAssignment> unknownAssignmentsPooled;
-        private PooledDictionary<string, PooledList<UDMFUnknownBlock>> unknownBlocksPooled;
+        private PooledDictionary<string, CL_PooledList<UDMFUnknownBlock>> unknownBlocksPooled;
 
         private UDMFScanner scanner;
 
@@ -191,7 +191,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
             unknownGlobalAssignmentsPooled = new PooledDictionary<string, UDMFUnknownAssignment> (StringComparer.InvariantCultureIgnoreCase);
             unknownAssignmentsPooled = new PooledDictionary<string, UDMFUnknownAssignment> (StringComparer.InvariantCultureIgnoreCase);
-            unknownBlocksPooled = new PooledDictionary<string, PooledList<UDMFUnknownBlock>> (StringComparer.InvariantCultureIgnoreCase);
+            unknownBlocksPooled = new PooledDictionary<string, CL_PooledList<UDMFUnknownBlock>> (StringComparer.InvariantCultureIgnoreCase);
         }
 
         #endregion
@@ -410,7 +410,7 @@ namespace ChronosLib.Doom.UDMF.Internal {
                 block = newBlock;
 
                 if (!unknownBlocksPooled.TryGetValue (ident, out var unknownBlocksList)) {
-                    unknownBlocksList = new PooledList<UDMFUnknownBlock> ();
+                    unknownBlocksList = new CL_PooledList<UDMFUnknownBlock> ();
                     unknownBlocksPooled.Add (ident, unknownBlocksList);
                 }
 

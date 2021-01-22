@@ -9,7 +9,7 @@
 
 using System;
 using System.Collections.Generic;
-using Collections.Pooled;
+using ChronosLib.Pooled;
 
 namespace ChronosLib.Doom.UDMF {
     internal interface IUDMFBlockList {
@@ -52,7 +52,7 @@ namespace ChronosLib.Doom.UDMF {
 
     /// <summary>A list of UDMF blocks.</summary>
     /// <typeparam name="T">The block's type.</typeparam>
-    public class UDMFPooledBlockList<T> : PooledList<T>, IUDMFBlockList
+    public class UDMFPooledBlockList<T> : CL_PooledList<T>, IUDMFBlockList
         where T : IUDMFBlock {
         #region ================== Constructors
 
