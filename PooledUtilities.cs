@@ -625,6 +625,9 @@ namespace ChronosLib.Pooled {
     }
 
     public class CL_PooledList<T> : Collections.Pooled.PooledList<T> {
+        public CL_PooledList () : base () { }
+        public CL_PooledList (int count) : base (count) { }
+
         #region ================== IDisposable Support
 
         public bool IsDisposed {
@@ -637,8 +640,8 @@ namespace ChronosLib.Pooled {
         ~CL_PooledList () {
 #if DEBUG
             if (!IsDisposed) {
+                Debug.Fail ($"An instance of PooledList<{typeof (T).FullName}> has not been disposed.");
                 Dispose ();
-                Debug.Fail ($"An instance of PooledList<{typeof (T).FullName}>");
             }
 #endif
         }
