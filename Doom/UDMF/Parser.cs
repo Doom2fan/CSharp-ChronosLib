@@ -578,6 +578,9 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
         void Dispose (bool disposing) {
             if (!disposedValue) {
+                if (disposing)
+                    GC.SuppressFinalize (this);
+
                 unknownGlobalAssignmentsPooled?.Dispose ();
                 unknownAssignmentsPooled?.Dispose ();
                 if (unknownBlocksPooled != null) {
@@ -589,6 +592,15 @@ namespace ChronosLib.Doom.UDMF.Internal {
 
                 disposedValue = true;
             }
+        }
+
+        ~UDMFParser_Internal () {
+#if DEBUG
+            if (!IsDisposed) {
+                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
+                Dispose (false);
+            }
+#endif
         }
 
         // This code added to correctly implement the disposable pattern.

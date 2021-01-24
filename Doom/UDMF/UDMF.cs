@@ -127,10 +127,24 @@ namespace ChronosLib.Doom.UDMF {
 
         protected virtual void Dispose (bool disposing) {
             if (!IsDisposed) {
+                if (disposing)
+                    GC.SuppressFinalize (this);
+
                 parser?.Dispose ();
+
+                parser = null;
 
                 IsDisposed = true;
             }
+        }
+
+        ~UDMFParser () {
+#if DEBUG
+            if (!IsDisposed) {
+                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
+                Dispose (false);
+            }
+#endif
         }
 
         // This code added to correctly implement the disposable pattern.

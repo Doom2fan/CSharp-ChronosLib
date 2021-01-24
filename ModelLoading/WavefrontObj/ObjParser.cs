@@ -89,7 +89,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             foreach (string line in lines)
                 Process (line, lineNum++);
 
-            return Finalize ();
+            return FinalizeFile ();
         }
 
         public ObjFile Parse (ReadOnlySpan<char> text) {
@@ -110,7 +110,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
                 lineCount++;
             }
 
-            return Finalize ();
+            return FinalizeFile ();
         }
 
         #endregion
@@ -282,7 +282,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             }
         }
 
-        protected ObjFile Finalize () {
+        protected ObjFile FinalizeFile () {
             currentGroupName ??= "GlobalFileGroup";
             meshGroups.Add (new ObjFile.MeshGroup (currentGroupName, currentMaterial, currentGroupFaces.ToPooledArray ()));
 
@@ -314,8 +314,11 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             private set;
         }
 
-        protected virtual void DoDispose () {
+        protected virtual void Dispose (bool disposing) {
             if (!IsDisposed) {
+                if (disposing)
+                    GC.SuppressFinalize (this);
+
                 vertexPositions.Dispose ();
                 vertexNormals.Dispose ();
                 vertexTexCoords.Dispose ();
@@ -328,8 +331,17 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             }
         }
 
+        ~ObjParser () {
+#if DEBUG
+            if (!IsDisposed) {
+                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
+                Dispose (false);
+            }
+#endif
+        }
+
         public void Dispose () {
-            DoDispose ();
+            Dispose (true);
         }
 
         #endregion
@@ -524,7 +536,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         public PooledArray<Vector3> Normals { get; }
         public PooledArray<Vector2> TexCoords { get; }
         public PooledArray<MeshGroup> MeshGroups { get; }
-        public string MaterialLibName { get; }
+        public string MaterialLibName { get; protected set; }
 
         #endregion
 
@@ -605,8 +617,11 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             private set;
         }
 
-        protected virtual void DoDispose () {
+        protected virtual void Dispose (bool disposing) {
             if (!IsDisposed) {
+                if (disposing)
+                    GC.SuppressFinalize (this);
+
                 foreach (var group in MeshGroups.Span)
                     group.Dispose ();
 
@@ -615,12 +630,23 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
                 TexCoords.Dispose ();
                 MeshGroups.Dispose ();
 
+                MaterialLibName = null;
+
                 IsDisposed = true;
             }
         }
 
+        ~ObjFile () {
+#if DEBUG
+            if (!IsDisposed) {
+                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
+                Dispose (false);
+            }
+#endif
+        }
+
         public void Dispose () {
-            DoDispose ();
+            Dispose (true);
         }
 
         #endregion

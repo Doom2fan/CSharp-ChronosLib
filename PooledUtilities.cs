@@ -641,13 +641,16 @@ namespace ChronosLib.Pooled {
 #if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of PooledList<{typeof (T).FullName}> has not been disposed.");
-                Dispose ();
+                Dispose (false);
             }
 #endif
         }
 
         protected override void Dispose (bool disposing) {
             if (!IsDisposed) {
+                if (disposing)
+                    GC.SuppressFinalize (this);
+
                 base.Dispose (disposing);
 
                 IsDisposed = true;
@@ -729,11 +732,19 @@ namespace ChronosLib.Pooled {
         public bool IsDisposed { get; private set; }
 
         ~CL_PooledListPool () {
-            Dispose ();
+#if DEBUG
+            if (!IsDisposed) {
+                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
+                Dispose (false);
+            }
+#endif
         }
 
-        public void Dispose () {
+        protected void Dispose (bool disposing) {
             if (!IsDisposed) {
+                if (disposing)
+                    GC.SuppressFinalize (this);
+
                 foreach (var list in pooledLists)
                     list?.Dispose ();
 
@@ -747,6 +758,10 @@ namespace ChronosLib.Pooled {
 
                 IsDisposed = true;
             }
+        }
+
+        public void Dispose () {
+            Dispose (true);
         }
 
         #endregion

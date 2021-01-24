@@ -216,16 +216,28 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             private set;
         }
 
-        protected virtual void DoDispose () {
+        protected virtual void Dispose (bool disposing) {
             if (!IsDisposed) {
+                if (disposing)
+                    GC.SuppressFinalize (this);
+
                 materials.Dispose ();
 
                 IsDisposed = true;
             }
         }
 
+        ~MtlParser () {
+#if DEBUG
+            if (!IsDisposed) {
+                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
+                Dispose (false);
+            }
+#endif
+        }
+
         public void Dispose () {
-            DoDispose ();
+            Dispose (true);
         }
 
         #endregion

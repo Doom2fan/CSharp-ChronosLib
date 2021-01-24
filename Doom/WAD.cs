@@ -257,16 +257,19 @@ namespace ChronosLib.Doom.WAD {
         IEnumerator<WADLump> IEnumerable<WADLump>.GetEnumerator () => Lumps.GetEnumerator ();
         IEnumerator IEnumerable.GetEnumerator () => Lumps.GetEnumerator ();
 
-        #region IDisposable
+        #endregion
+
+        #region ================== IDisposable support
 
         protected virtual void Dispose (bool disposing) {
             if (!IsDisposed) {
-                if (disposing) {
-                    if (WADStream != null)
-                        WADStream.Dispose ();
+                if (disposing)
+                    GC.SuppressFinalize (this);
 
-                    Lumps.ClearList ();
-                }
+                if (WADStream != null)
+                    WADStream.Dispose ();
+
+                Lumps.ClearList ();
 
                 Lumps = null;
 
@@ -274,11 +277,18 @@ namespace ChronosLib.Doom.WAD {
             }
         }
 
+        ~WAD () {
+#if DEBUG
+            if (!IsDisposed) {
+                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
+                Dispose (false);
+            }
+#endif
+        }
+
         public void Dispose () {
             Dispose (true);
         }
-
-        #endregion
 
         #endregion
     }
