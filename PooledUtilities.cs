@@ -638,12 +638,10 @@ namespace ChronosLib.Pooled {
         }
 
         ~CL_PooledList () {
-#if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of PooledList<{typeof (T).FullName}> has not been disposed.");
                 Dispose (false);
             }
-#endif
         }
 
         protected override void Dispose (bool disposing) {
@@ -732,12 +730,10 @@ namespace ChronosLib.Pooled {
         public bool IsDisposed { get; private set; }
 
         ~CL_PooledListPool () {
-#if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
                 Dispose (false);
             }
-#endif
         }
 
         protected void Dispose (bool disposing) {

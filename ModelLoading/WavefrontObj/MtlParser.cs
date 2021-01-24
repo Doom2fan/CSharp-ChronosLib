@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -228,12 +229,10 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         ~MtlParser () {
-#if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
                 Dispose (false);
             }
-#endif
         }
 
         public void Dispose () {

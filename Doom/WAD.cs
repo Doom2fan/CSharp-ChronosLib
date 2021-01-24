@@ -10,6 +10,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -278,12 +279,10 @@ namespace ChronosLib.Doom.WAD {
         }
 
         ~WAD () {
-#if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
                 Dispose (false);
             }
-#endif
         }
 
         public void Dispose () {

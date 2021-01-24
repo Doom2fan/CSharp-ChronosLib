@@ -32,7 +32,7 @@
  */
 
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using ChronosLib.Pooled;
@@ -332,12 +332,10 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         ~ObjParser () {
-#if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
                 Dispose (false);
             }
-#endif
         }
 
         public void Dispose () {
@@ -637,12 +635,10 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         }
 
         ~ObjFile () {
-#if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
                 Dispose (false);
             }
-#endif
         }
 
         public void Dispose () {

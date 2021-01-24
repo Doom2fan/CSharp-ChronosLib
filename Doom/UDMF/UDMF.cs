@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using ChronosLib.Doom.UDMF.Internal;
 
 namespace ChronosLib.Doom.UDMF {
@@ -139,12 +140,10 @@ namespace ChronosLib.Doom.UDMF {
         }
 
         ~UDMFParser () {
-#if DEBUG
             if (!IsDisposed) {
                 Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
                 Dispose (false);
             }
-#endif
         }
 
         // This code added to correctly implement the disposable pattern.
