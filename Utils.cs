@@ -8,14 +8,15 @@
  */
 
 using System;
+using System.Collections.Generic;
 
 namespace ChronosLib {
-    static internal class Utils {
-        static internal class BitConversion {
-            static internal class BigEndian {
+    internal static class Utils {
+        internal static class BitConversion {
+            internal static class BigEndian {
                 #region Signed
 
-                static internal int ToInt32 (byte [] value, int startIndex = 0) {
+                internal static int ToInt32 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 4 > value.Length)
@@ -30,7 +31,7 @@ namespace ChronosLib {
                     return BitConverter.ToInt32 (buffer, 0);
                 }
 
-                static internal short ToInt16 (byte [] value, int startIndex = 0) {
+                internal static short ToInt16 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 2 > value.Length)
@@ -45,7 +46,7 @@ namespace ChronosLib {
                     return BitConverter.ToInt16 (buffer, 0);
                 }
 
-                static internal long ToInt64 (byte [] value, int startIndex = 0) {
+                internal static long ToInt64 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 8 > value.Length)
@@ -64,7 +65,7 @@ namespace ChronosLib {
 
                 #region Unsigned
 
-                static internal uint ToUInt32 (byte [] value, int startIndex = 0) {
+                internal static uint ToUInt32 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 4 > value.Length)
@@ -79,7 +80,7 @@ namespace ChronosLib {
                     return BitConverter.ToUInt32 (buffer, 0);
                 }
 
-                static internal ushort ToUInt16 (byte [] value, int startIndex = 0) {
+                internal static ushort ToUInt16 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 2 > value.Length)
@@ -94,7 +95,7 @@ namespace ChronosLib {
                     return BitConverter.ToUInt16 (buffer, 0);
                 }
 
-                static internal ulong ToUInt64 (byte [] value, int startIndex = 0) {
+                internal static ulong ToUInt64 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 8 > value.Length)
@@ -112,10 +113,10 @@ namespace ChronosLib {
                 #endregion
             }
 
-            static internal class LittleEndian {
+            internal static class LittleEndian {
                 #region Signed
 
-                static internal int ToInt32 (byte [] value, int startIndex = 0) {
+                internal static int ToInt32 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 4 > value.Length)
@@ -130,7 +131,7 @@ namespace ChronosLib {
                     return BitConverter.ToInt32 (buffer, 0);
                 }
 
-                static internal short ToInt16 (byte [] value, int startIndex = 0) {
+                internal static short ToInt16 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 2 > value.Length)
@@ -145,7 +146,7 @@ namespace ChronosLib {
                     return BitConverter.ToInt16 (buffer, 0);
                 }
 
-                static internal long ToInt64 (byte [] value, int startIndex = 0) {
+                internal static long ToInt64 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 8 > value.Length)
@@ -164,7 +165,7 @@ namespace ChronosLib {
 
                 #region Unsigned
 
-                static internal uint ToUInt32 (byte [] value, int startIndex = 0) {
+                internal static uint ToUInt32 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 4 > value.Length)
@@ -179,7 +180,7 @@ namespace ChronosLib {
                     return BitConverter.ToUInt32 (buffer, 0);
                 }
 
-                static internal ushort ToUInt16 (byte [] value, int startIndex = 0) {
+                internal static ushort ToUInt16 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 2 > value.Length)
@@ -194,7 +195,7 @@ namespace ChronosLib {
                     return BitConverter.ToUInt16 (buffer, 0);
                 }
 
-                static internal ulong ToUInt64 (byte [] value, int startIndex = 0) {
+                internal static ulong ToUInt64 (byte [] value, int startIndex = 0) {
                     if (value is null)
                         throw new ArgumentNullException ("value");
                     if (startIndex + 8 > value.Length)
@@ -212,5 +213,71 @@ namespace ChronosLib {
                 #endregion
             }
         }
+
+        internal static int Rehash (int hash) {
+            const int a = 6;
+            const int b = 13;
+            const int c = 25;
+
+            uint uhash = (uint) hash * 982451653u;
+
+            var rehashed =
+                ((uhash << a) | (uhash >> (32 - a))) ^
+                ((uhash << b) | (uhash >> (32 - b))) ^
+                ((uhash << c) | (uhash >> (32 - c)));
+
+            return (int) rehashed;
+        }
+    }
+
+    internal readonly struct RehashedValue<T>
+        : IComparable<T>, IComparable<RehashedValue<T>>, IEquatable<T>, IEquatable<RehashedValue<T>>
+        where T : IEquatable<T>, IComparable<T> {
+        #region ================== Instance fields
+
+        public readonly T Value;
+
+        #endregion
+
+        #region ================== Constructors
+
+        public RehashedValue (T val) {
+            Value = val;
+        }
+
+        #endregion
+
+        #region ================== Instance methods
+
+        public override bool Equals (object obj) {
+            if (obj is RehashedValue<T>) {
+                var other = ((RehashedValue<T>) obj).Value;
+                return Value.Equals (other);
+            }
+
+            return Value.Equals (obj);
+        }
+
+        public bool Equals (T other) {
+            return Value.Equals (other);
+        }
+
+        public bool Equals (RehashedValue<T> other) {
+            return Equals (other.Value);
+        }
+
+        public int CompareTo (T other) {
+            return Value.CompareTo (other);
+        }
+
+        public int CompareTo (RehashedValue<T> other) {
+            return CompareTo (other.Value);
+        }
+
+        public override int GetHashCode () {
+            return Utils.Rehash (Value.GetHashCode ());
+        }
+
+        #endregion
     }
 }

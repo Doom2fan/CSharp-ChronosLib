@@ -35,11 +35,12 @@ using System;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using ChronosLib.FileLoading;
 using ChronosLib.Pooled;
 using Microsoft.Toolkit.HighPerformance.Buffers;
 
 namespace ChronosLib.ModelLoading.WavefrontObj {
-    public class ObjParser : ParserBase, IDisposable {
+    public class ObjParser : SimpleParserBase, IDisposable {
         #region ================== Static fields
 
         protected static readonly string whitespaceChars = " \t";
@@ -160,11 +161,11 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
             var specifier = ReadIgnoreWhitespace (ref line);
 
             if (CheckSpecifier (specifier, "v"))
-                vertexPositions.Add (ParseVector3 (ref line, "position data (v)"));
+                vertexPositions.Add (ParseObjVector3 (ref line, "position data (v)"));
             else if (CheckSpecifier (specifier, "vn"))
-                vertexNormals.Add (ParseVector3 (ref line, "normal data (vn)"));
+                vertexNormals.Add (ParseObjVector3 (ref line, "normal data (vn)"));
             else if (CheckSpecifier (specifier, "vt")) {
-                var texCoord = ParseVector2 (ref line, "texture coordinate data (vt)");
+                var texCoord = ParseObjVector2 (ref line, "texture coordinate data (vt)");
                 // Flip v coordinate
                 texCoord.Y = 1f - texCoord.Y;
                 vertexTexCoords.Add (texCoord);

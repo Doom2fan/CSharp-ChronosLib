@@ -1,6 +1,6 @@
 ﻿/*
  * ChronosLib - A collection of useful things
- * Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
+ * Copyright (C) 2018-2021 Chronos "phantombeta" Ouroboros
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13,10 +13,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using ChronosLib.FileLoading;
 using ChronosLib.Pooled;
 
 namespace ChronosLib.ModelLoading.WavefrontObj {
-    public class MtlParser : ParserBase, IDisposable {
+    public class MtlParser : SimpleParserBase, IDisposable {
         #region ================== Static fields
 
         protected static readonly string whitespaceChars = " \t";
@@ -115,16 +116,16 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
                 FinalizeCurrentMaterial ();
                 curMaterial = new MaterialDefinition (ParseText (ref line, "newmtl").ToString ());
             } else if (CheckSpecifier (specifier, "Ka"))
-                curMaterial.AmbientReflectivity = ParseVector3 (ref line, "Ka");
+                curMaterial.AmbientReflectivity = ParseObjVector3 (ref line, "Ka");
 
             else if (CheckSpecifier (specifier, "Kd"))
-                curMaterial.DiffuseReflectivity = ParseVector3 (ref line, "Kd");
+                curMaterial.DiffuseReflectivity = ParseObjVector3 (ref line, "Kd");
 
             else if (CheckSpecifier (specifier, "Ks"))
-                curMaterial.SpecularReflectivity = ParseVector3 (ref line, "Ks");
+                curMaterial.SpecularReflectivity = ParseObjVector3 (ref line, "Ks");
 
             else if (CheckSpecifier (specifier, "Tf"))
-                curMaterial.TransmissionFilter = ParseVector3 (ref line, "Tf");
+                curMaterial.TransmissionFilter = ParseObjVector3 (ref line, "Tf");
 
             else if (CheckSpecifier (specifier, "illum"))
                 curMaterial.IlluminationModel = ParseInt (ref line, "illum");
@@ -169,7 +170,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
                 curMaterial.Metallicness = ParseFloat (ref line, "Pm");
 
             else if (CheckSpecifier (specifier, "Ke"))
-                curMaterial.EmissiveCoefficient = ParseVector3 (ref line, "Ke");
+                curMaterial.EmissiveCoefficient = ParseObjVector3 (ref line, "Ke");
 
             else if (CheckSpecifier (specifier, "map_Pr"))
                 curMaterial.RoughnessTexture = ParseText (ref line, "map_Pr").ToString ();
