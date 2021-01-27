@@ -428,8 +428,6 @@ namespace ChronosLib.Doom.UDMF.Internal {
         }
 
         private void ParseExpr_List (IUDMFBlock block, ParserInfo.BlockInfo? info) {
-            unknownAssignmentsPooled.Clear ();
-
             UDMFToken tok = scanner.LookAhead ();
             while (tok.Type == UDMFTokenType.IDENTIFIER) {
                 tok = scanner.Scan ();
@@ -451,10 +449,11 @@ namespace ChronosLib.Doom.UDMF.Internal {
             }
 
             if (unknownAssignmentsPooled.Count > 0) {
-                block.UnknownAssignments = new Dictionary<string, UDMFUnknownAssignment> (
-                    unknownAssignmentsPooled,
-                    StringComparer.InvariantCultureIgnoreCase
-                );
+                block.UnknownAssignments = new Dictionary<string, UDMFUnknownAssignment> (StringComparer.InvariantCultureIgnoreCase);
+                block.UnknownAssignments.EnsureCapacity (unknownAssignmentsPooled.Count);
+                foreach (var kvp in unknownAssignmentsPooled)
+                    block.UnknownAssignments.Add (kvp.Key, kvp.Value);
+
                 unknownAssignmentsPooled.Clear ();
             }
         }
