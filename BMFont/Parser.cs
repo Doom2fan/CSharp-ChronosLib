@@ -89,6 +89,10 @@ namespace ChronosLib.BMFont {
             var ret = new BMFontInfo (charData, kernPairs, pages, genInfo, commonInfo);
 
             pagesParsed.Dispose ();
+            charData = null;
+            pages = null;
+            kernPairs = null;
+
             genInfo = new BMFontGenerationInfo ();
             commonInfo = new BMFontCommonInfo ();
 
