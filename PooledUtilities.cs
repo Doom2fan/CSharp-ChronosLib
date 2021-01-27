@@ -234,12 +234,8 @@ namespace ChronosLib.Pooled {
             if (items.Length == 0)
                 return;
 
-            try {
-                // Clear the elements so that the gc can reclaim the references.
-                pool?.Return (items, clearArray: clearOnFree);
-            } catch (ArgumentException) {
-                // oh well, the array pool didn't like our array
-            }
+            // Clear the elements so that the gc can reclaim the references.
+            pool.Return (items, clearArray: clearOnFree);
 
             items = emptyArray;
         }
