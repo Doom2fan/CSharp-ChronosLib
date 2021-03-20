@@ -267,10 +267,9 @@ namespace ChronosLib.Doom.WAD {
                 if (disposing)
                     GC.SuppressFinalize (this);
 
-                if (WADStream != null)
-                    WADStream.Dispose ();
+                WADStream?.Dispose ();
 
-                Lumps.ClearList ();
+                Lumps?.ClearList ();
 
                 Lumps = null;
 
