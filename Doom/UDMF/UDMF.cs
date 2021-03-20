@@ -93,6 +93,7 @@ namespace ChronosLib.Doom.UDMF {
             IsDisposed = false;
             dataType = typeof (T);
             parser = new UDMFParser_Internal (new UDMFScanner ());
+            Errors = parser.Errors;
         }
 
         #endregion
