@@ -235,7 +235,13 @@ namespace ChronosLib.Doom.WAD {
 
                 lmp.FilePos = Utils.BitConversion.LittleEndian.ToInt32 (directoryBytes, lmpStart);
                 lmp.Size = Utils.BitConversion.LittleEndian.ToInt32 (directoryBytes, lmpStart + 4);
-                lmp.Name = Encoding.ASCII.GetString (directoryBytes, lmpStart + 8, 8);
+
+                var nameSpan = new ReadOnlySpan<byte> (directoryBytes, lmpStart + 8, 8);
+                var nulIdx = nameSpan.IndexOf ((byte) '\0');
+                if (nulIdx > -1)
+                    nameSpan = nameSpan.Slice (0, nulIdx);
+
+                lmp.Name = Encoding.ASCII.GetString (nameSpan);
 
                 lmp.IsValid = (lmp.FilePos <= stream.Length) && ((lmp.FilePos + lmp.Size) <= stream.Length);
 
