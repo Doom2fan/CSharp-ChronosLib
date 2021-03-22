@@ -188,8 +188,6 @@ namespace ChronosLib.Doom.WAD {
             if (!stream.CanSeek)
                 throw new ArgumentException ("The stream cannot be seeked.", "stream");
 
-            var wad = new WAD ();
-
             stream.Seek (0, SeekOrigin.Begin);
 
             var headerBytes = new byte [HEADERSIZE];
@@ -202,14 +200,14 @@ namespace ChronosLib.Doom.WAD {
             if (!id.Equals ("IWAD") && !id.Equals ("PWAD"))
                 throw new WADLoadException ("Not a WAD file", WADLoadException.ErrorType.NotWAD);
 
-            wad.IsIWAD = id.Equals ("IWAD");
+            bool isIWAD = id.Equals ("IWAD");
 
             int numLumps = Utils.BitConversion.LittleEndian.ToInt32 (headerBytes, 4);
             int infoTableOfs = Utils.BitConversion.LittleEndian.ToInt32 (headerBytes, 8);
 
             if (numLumps < 0)
                 throw new WADLoadException ("Invalid WAD file", WADLoadException.ErrorType.InvalidWAD);
-            if (infoTableOfs < 0 || infoTableOfs > stream.Length || (infoTableOfs + (numLumps * LUMPINFOSIZE) > stream.Length))
+            if (infoTableOfs < 0 || (infoTableOfs + (numLumps * LUMPINFOSIZE) > stream.Length))
                 throw new WADLoadException ("Invalid WAD file", WADLoadException.ErrorType.InvalidDirectory);
 
             if (loadIntoRAM) {
@@ -219,13 +217,13 @@ namespace ChronosLib.Doom.WAD {
                 stream = ramStream;
             }
 
-            wad.WADStream = stream;
-
             byte [] directoryBytes = new byte [numLumps * LUMPINFOSIZE];
 
             stream.Seek (infoTableOfs, SeekOrigin.Begin);
             stream.Read (directoryBytes, 0, numLumps * LUMPINFOSIZE);
-            wad.Lumps = new WADLumpCollection (numLumps);
+            var lumps = new WADLumpCollection (numLumps);
+
+            var wad = new WAD ();
 
             for (int i = 0; i < numLumps; i++) {
                 var lmp = new WADLump ();
@@ -245,8 +243,12 @@ namespace ChronosLib.Doom.WAD {
 
                 lmp.IsValid = (lmp.FilePos <= stream.Length) && ((lmp.FilePos + lmp.Size) <= stream.Length);
 
-                wad.Lumps.AddLump (lmp);
+                lumps.AddLump (lmp);
             }
+
+            wad.IsIWAD = isIWAD;
+            wad.WADStream = stream;
+            wad.Lumps = lumps;
 
             return wad;
         }
