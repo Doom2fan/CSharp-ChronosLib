@@ -280,4 +280,20 @@ namespace ChronosLib {
 
         #endregion
     }
+
+    internal class IntPtrComparer : IComparer<IntPtr> {
+        public static IntPtrComparer Instance = new IntPtrComparer ();
+
+        public unsafe int Compare (IntPtr a, IntPtr b) {
+            var aPtr = (void*) a;
+            var bPtr = (void*) b;
+
+            if (aPtr > bPtr)
+                return 1;
+            else if (aPtr < bPtr)
+                return -1;
+            else
+                return 0;
+        }
+    }
 }
