@@ -12,7 +12,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace ChronosLib {
+namespace ChronosLib.Unmanaged {
     public unsafe struct UnmanagedArray<T> : IDisposable
         where T : unmanaged {
         public static UnmanagedArray<T> Empty () {
