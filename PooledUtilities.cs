@@ -277,6 +277,32 @@ namespace ChronosLib.Pooled {
             size++;
         }
 
+        /// <summary>Adds an item multiple times.</summary>
+        /// <param name="item">The item to add.</param>
+        /// <param name="count">The number of times to add.</param>
+        public void Add (T item, int count) {
+            EnsureCapacity (size + count);
+
+            for (int i = 0; i < count; i++)
+                items [size + i] = item;
+
+            version++;
+            size += count;
+        }
+
+        /// <summary>Adds an item multiple times.</summary>
+        /// <param name="item">The item to add.</param>
+        /// <param name="count">The number of times to add.</param>
+        public void Add (ref T item, int count) {
+            EnsureCapacity (size + count);
+
+            for (int i = 0; i < count; i++)
+                items [size + i] = item;
+
+            version++;
+            size += count;
+        }
+
         /// <inheritdoc/>
         public void AddRange (StructPooledList<T> newItems) {
             int startPos = size;
