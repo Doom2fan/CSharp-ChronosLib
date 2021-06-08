@@ -10,7 +10,7 @@
 #nullable enable
 
 using System;
-using System.Runtime.InteropServices;
+using static TerraFX.Interop.Mimalloc;
 
 namespace ChronosLib.Unmanaged {
     public unsafe struct UnmanagedArray<T> : IDisposable
@@ -24,7 +24,7 @@ namespace ChronosLib.Unmanaged {
 
         public static UnmanagedArray<T> GetArray (int length) {
             var newArr = new UnmanagedArray<T> {
-                Pointer = (T*) Marshal.AllocHGlobal (length * sizeof (T)),
+                Pointer = (T*) mi_malloc ((nuint) (length * sizeof (T))),
                 Length = length,
             };
 
@@ -53,7 +53,7 @@ namespace ChronosLib.Unmanaged {
 
         public void Dispose () {
             if (!disposedValue) {
-                Marshal.FreeHGlobal ((IntPtr) Pointer);
+                mi_free (Pointer);
                 Length = 0;
                 Pointer = null;
 

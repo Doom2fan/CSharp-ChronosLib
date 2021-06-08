@@ -12,7 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using static TerraFX.Interop.Mimalloc;
 
 namespace ChronosLib.Unmanaged {
     public unsafe sealed class BasicMemoryManager : IMemoryManager {
@@ -74,11 +74,11 @@ namespace ChronosLib.Unmanaged {
         }
 
         private IntPtr AllocateMemory (int bytesCount) {
-            return Marshal.AllocHGlobal (bytesCount);
+            return (IntPtr) mi_malloc ((nuint) bytesCount)!;
         }
 
         private void FreeMemory (IntPtr ptr) {
-            Marshal.FreeHGlobal (ptr);
+            mi_free ((void*) ptr);
         }
 
         #endregion

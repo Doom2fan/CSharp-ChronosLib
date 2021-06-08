@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net5</TargetFramework>
     <Platforms>AnyCPU;x64;x86</Platforms>
     <Version>2.0.0</Version>
     <Copyright>Copyright © Chronos Ouroboros 2018-2020</Copyright>
@@ -36,6 +36,7 @@
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.0.0-preview4" />
     <PackageReference Include="MurmurHash.Net" Version="0.0.2" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="TerraFX.Interop.Mimalloc" Version="1.6.0-beta1" />
   </ItemGroup>
 
 </Project>
