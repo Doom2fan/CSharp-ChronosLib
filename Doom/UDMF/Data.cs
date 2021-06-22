@@ -262,9 +262,12 @@ namespace ChronosLib.Doom.UDMF {
         /// or is not of type Float.</returns>
         public static double? GetUnknownAssignmentFloat<T> (this T self, string assignmentName)
             where T : IUDMFBlock {
-            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
-                assignment.Type == UDMFUnknownAssignment.AssignmentType.Float)
-                return assignment.GetFloat ();
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment)) {
+                if (assignment.Type == UDMFUnknownAssignment.AssignmentType.Float)
+                    return assignment.GetFloat ();
+                else if (assignment.Type == UDMFUnknownAssignment.AssignmentType.Int)
+                    return assignment.GetInt ();
+            }
 
             return null;
         }
@@ -275,9 +278,12 @@ namespace ChronosLib.Doom.UDMF {
         /// assignment doesn't exist or is not of type Float.</returns>
         public static double GetUnknownAssignmentFloat<T> (this T self, string assignmentName, double defaultVal)
             where T : IUDMFBlock {
-            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment) &&
-                assignment.Type == UDMFUnknownAssignment.AssignmentType.Float)
-                return assignment.GetFloat ();
+            if (self.UnknownAssignments.TryGetValue (assignmentName, out var assignment)) {
+                if (assignment.Type == UDMFUnknownAssignment.AssignmentType.Float)
+                    return assignment.GetFloat ();
+                else if (assignment.Type == UDMFUnknownAssignment.AssignmentType.Int)
+                    return assignment.GetInt ();
+            }
 
             return defaultVal;
         }
