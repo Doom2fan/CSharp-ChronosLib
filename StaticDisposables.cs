@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ChronosLib {
     public static class StaticDisposables {
