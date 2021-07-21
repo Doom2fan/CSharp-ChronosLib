@@ -15,15 +15,24 @@ using System.Text;
 
 namespace ChronosLib {
     public static class StaticDisposables {
-        private static List<IDisposable?> disposables = new List<IDisposable?> ();
+        private static List<IDisposable> disposables = new List<IDisposable> ();
+        private static List<Action> disposeFunctions = new List<Action> ();
 
         public static void AddDisposable (IDisposable? obj) {
+            if (obj is null)
+                return;
+
             disposables.Add (obj);
         }
+
+        public static void AddDisposable (Action func) => disposeFunctions.Add (func);
 
         public static void Dispose () {
             foreach (var obj in disposables)
                 obj?.Dispose ();
+
+            foreach (var func in disposeFunctions)
+                func ();
         }
     }
 }
