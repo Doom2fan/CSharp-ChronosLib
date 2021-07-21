@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Collections.Pooled;
 
 namespace ChronosLib.Pooled {
     public enum CL_ClearMode {
@@ -646,7 +647,7 @@ namespace ChronosLib.Pooled {
         #endregion
     }
 
-    public class CL_PooledList<T> : Collections.Pooled.PooledList<T> {
+    public class CL_PooledList<T> : PooledList<T> {
         public CL_PooledList () : base () { }
         public CL_PooledList (int count) : base (count) { }
 
