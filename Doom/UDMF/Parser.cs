@@ -17,7 +17,7 @@ using ChronosLib.Pooled;
 using ChronosLib.Reflection;
 using ChronosLib.StringPooling;
 using Collections.Pooled;
-using StrPool = Microsoft.Toolkit.HighPerformance.Buffers.StringPool;
+using StrPool = CommunityToolkit.HighPerformance.Buffers.StringPool;
 
 namespace ChronosLib.Doom.UDMF.Internal {
     internal sealed class ParserInfo {

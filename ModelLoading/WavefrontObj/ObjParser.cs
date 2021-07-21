@@ -37,7 +37,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using ChronosLib.FileLoading;
 using ChronosLib.Pooled;
-using Microsoft.Toolkit.HighPerformance.Buffers;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace ChronosLib.ModelLoading.WavefrontObj {
     public class ObjParser : SimpleParserBase, IDisposable {
