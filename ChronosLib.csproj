@@ -33,10 +33,10 @@
 
   <ItemGroup>
     <PackageReference Include="Collections.Pooled" Version="2.0.0-preview.27" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.0.0-preview4" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="7.0.3" />
     <PackageReference Include="MurmurHash.Net" Version="0.0.2" />
     <PackageReference Include="System.Memory" Version="4.5.4" />
-    <PackageReference Include="TerraFX.Interop.Mimalloc" Version="1.6.0-beta1" />
+    <PackageReference Include="TerraFX.Interop.Mimalloc" Version="1.6.0-beta2" />
   </ItemGroup>
 
 </Project>
