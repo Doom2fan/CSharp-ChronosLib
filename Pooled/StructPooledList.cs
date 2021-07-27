@@ -1,6 +1,6 @@
 ﻿/*
  * ChronosLib - A collection of useful things
- * Copyright (C) 2018-2020 Chronos "phantombeta" Ouroboros
+ * Copyright (C) 2018-2021 Chronos "phantombeta" Ouroboros
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13,100 +13,10 @@ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Collections.Pooled;
 
 namespace ChronosLib.Pooled {
-    public enum CL_ClearMode {
-        /// <summary>Reference types and value types that contain reference types are cleared when the internal arrays
-        /// are returned to the pool. Value types that do not contain reference types are not cleared when returned to
-        /// the pool.</summary>
-        Auto = 0,
-        /// <summary>Collections are always cleared.</summary>
-        Always = 1,
-        /// <summary>Collections are never cleared.</summary>
-        Never = 2
-    }
-
-    internal static class PooledUtils {
-        public static bool IsCompatibleObject<T> (object? value) {
-            // Non-null values are fine.  Only accept nulls if T is a class or Nullable<U>.
-            // Note that default(T) is not equal to null for value types except when T is Nullable<U>.
-            return (value is T) || (value == null && default (T) == null);
-        }
-
-        public static void EnsureNotNull<T> (object? value, string paramName) {
-            // Note that default(T) is not equal to null for value types except when T is Nullable<U>.
-            if (!(default (T) == null) && value == null)
-                throw new ArgumentNullException (paramName);
-        }
-    }
-
-    public struct PooledArray<T> : IDisposable {
-        public static PooledArray<T> Empty () {
-            return new PooledArray<T> {
-                Array = System.Array.Empty<T> (),
-                arrayPool = null,
-                RealLength = 0,
-            };
-        }
-
-        public static PooledArray<T> GetArray (int length) {
-            return GetArray (length, ArrayPool<T>.Shared);
-        }
-
-        public static PooledArray<T> GetArray (int length, ArrayPool<T> pool) {
-            var newArr = new PooledArray<T> {
-                arrayPool = pool,
-                RealLength = length,
-                Array = pool.Rent (length),
-            };
-
-            return newArr;
-        }
-
-        #region ================== Instance fields
-
-        private ArrayPool<T>? arrayPool;
-
-        #endregion
-
-        #region ================== Instance properties
-
-        public int RealLength { get; private set; }
-        public T [] Array { get; private set; }
-
-        public Span<T> Span => Array.AsSpan (0, RealLength);
-
-        #endregion
-
-        #region ================== Casts
-
-        public static explicit operator T [] (PooledArray<T> array) => array.Array;
-        public static implicit operator Span<T> (PooledArray<T> array) => array.Array.AsSpan (0, array.RealLength);
-        public static implicit operator ReadOnlySpan<T> (PooledArray<T> array) => array.Array.AsSpan (0, array.RealLength);
-
-        #endregion
-
-        #region ================== IDisposable support
-
-        private bool disposedValue;
-
-        public void Dispose () {
-            if (!disposedValue) {
-                arrayPool?.Return (Array);
-                RealLength = 0;
-                Array = System.Array.Empty<T> ();
-
-                disposedValue = true;
-            }
-        }
-
-        #endregion
-    }
-
     public struct StructPooledList<T> : IList<T>, IReadOnlyList<T>, IList, IDisposable {
         #region ================== Constants
 
@@ -228,7 +138,7 @@ namespace ChronosLib.Pooled {
 
         private static bool ShouldClear (CL_ClearMode mode) {
             return mode == CL_ClearMode.Always
-                || (mode == CL_ClearMode.Auto && RuntimeHelpers.IsReferenceOrContainsReferences <T> ());
+                || (mode == CL_ClearMode.Auto && RuntimeHelpers.IsReferenceOrContainsReferences<T> ());
         }
 
         private void ReturnArray () {
@@ -642,145 +552,6 @@ namespace ChronosLib.Pooled {
 
                 IsDisposed = true;
             }
-        }
-
-        #endregion
-    }
-
-    public class CL_PooledList<T> : PooledList<T> {
-        public CL_PooledList () : base () { }
-        public CL_PooledList (int count) : base (count) { }
-
-        #region ================== IDisposable Support
-
-        public bool IsDisposed {
-            [MethodImpl (MethodImplOptions.AggressiveInlining)]
-            get;
-            [MethodImpl (MethodImplOptions.AggressiveInlining)]
-            set;
-        }
-
-        ~CL_PooledList () {
-            if (!IsDisposed) {
-                Debug.Fail ($"An instance of PooledList<{typeof (T).FullName}> has not been disposed.");
-                Dispose (false);
-            }
-        }
-
-        protected override void Dispose (bool disposing) {
-            if (!IsDisposed) {
-                if (disposing)
-                    GC.SuppressFinalize (this);
-
-                base.Dispose (disposing);
-
-                IsDisposed = true;
-            }
-        }
-
-        #endregion
-    }
-
-    public class CL_PooledListPool<T> : IDisposable {
-        public static CL_PooledListPool<T> Shared {
-            [MethodImpl (MethodImplOptions.AggressiveInlining)]
-            get;
-            private set;
-        }
-
-        #region ================== Instance fields
-
-        protected List<CL_PooledList<T>> pooledLists;
-        protected List<CL_PooledList<T>> rentedLists;
-
-        #endregion
-
-        #region ================== Constructor
-
-        static CL_PooledListPool () {
-            Shared = new CL_PooledListPool<T> ();
-
-            StaticDisposables.AddDisposable (Shared);
-        }
-
-        public CL_PooledListPool () {
-            pooledLists = new List<CL_PooledList<T>> ();
-            rentedLists = new List<CL_PooledList<T>> ();
-        }
-
-        #endregion
-
-        #region ================== Instance methods
-
-        public CL_PooledList<T> Rent () {
-            if (pooledLists.Count > 0) {
-                var list = pooledLists [^1];
-
-                Debug.Assert (!list.IsDisposed, "The list was disposed.");
-
-                pooledLists.RemoveAt (pooledLists.Count - 1);
-                rentedLists.Add (list);
-
-                return list;
-            } else {
-                var list = new CL_PooledList<T> ();
-
-                rentedLists.Add (list);
-
-                return list;
-            }
-        }
-
-        public void Return (CL_PooledList<T> list) {
-            Debug.Assert (!list.IsDisposed, "Attempted to return a disposed list.");
-
-            list.Clear ();
-            list.Capacity = 0;
-
-            var idx = rentedLists.IndexOf (list);
-
-            Debug.Assert (idx >= 0, "A list has been returned more than once, or this is not a pooled list.");
-
-            rentedLists [idx] = rentedLists [^1];
-            rentedLists.RemoveAt (rentedLists.Count - 1);
-            pooledLists.Add (list);
-        }
-
-        #endregion
-
-        #region ================== IDisposable Support
-
-        public bool IsDisposed { get; private set; }
-
-        ~CL_PooledListPool () {
-            if (!IsDisposed) {
-                Debug.Fail ($"An instance of {GetType ().FullName} has not been disposed.");
-                Dispose (false);
-            }
-        }
-
-        protected void Dispose (bool disposing) {
-            if (!IsDisposed) {
-                if (disposing)
-                    GC.SuppressFinalize (this);
-
-                foreach (var list in pooledLists)
-                    list?.Dispose ();
-
-                Debug.Assert (rentedLists.Count < 1, "Rented lists have been leaked.");
-
-                foreach (var list in rentedLists)
-                    list?.Dispose ();
-
-                pooledLists.Clear ();
-                rentedLists.Clear ();
-
-                IsDisposed = true;
-            }
-        }
-
-        public void Dispose () {
-            Dispose (true);
         }
 
         #endregion
