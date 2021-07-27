@@ -25,6 +25,9 @@ namespace ChronosLib.Pooled {
         }
 
         public static PooledArray<T> GetArray (int length, ArrayPool<T> pool) {
+            if (length == 0)
+                return Empty ();
+
             var newArr = new PooledArray<T> {
                 arrayPool = pool,
                 RealLength = length,

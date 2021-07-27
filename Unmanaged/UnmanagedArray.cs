@@ -23,6 +23,9 @@ namespace ChronosLib.Unmanaged {
         }
 
         public static UnmanagedArray<T> GetArray (int length) {
+            if (length == 0)
+                return Empty ();
+
             var newArr = new UnmanagedArray<T> {
                 Pointer = (T*) mi_malloc ((nuint) (length * sizeof (T))),
                 Length = length,
