@@ -93,6 +93,22 @@ namespace ChronosLib.Pooled {
 
         #endregion
 
+        #region Span<Rune> to string - lowercase, invariant culture
+
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
+        public static string GetPooledString_LowerInvariant (this Span<Rune> runes) {
+            using var chars = runes.GetPooledChars ();
+            return GetPooledString_LowerInvariant (chars);
+        }
+
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
+        public static string GetPooledString_LowerInvariant (this ReadOnlySpan<Rune> runes) {
+            using var chars = runes.GetPooledChars ();
+            return GetPooledString_LowerInvariant (chars);
+        }
+
+        #endregion
+
         #region Span<Rune> to char array
 
         public static PooledArray<char> GetPooledChars (this ReadOnlySpan<Rune> runes) {
