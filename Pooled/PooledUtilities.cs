@@ -56,6 +56,18 @@ namespace ChronosLib.Pooled {
             return StringPool.Shared.GetOrAdd (chars.Span);
         }
 
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
+        public static string GetString (this Span<Rune> runes) {
+            using var chars = runes.GetPooledChars ();
+            return chars.Span.ToString ();
+        }
+
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
+        public static string GetString (this ReadOnlySpan<Rune> runes) {
+            using var chars = runes.GetPooledChars ();
+            return chars.Span.ToString ();
+        }
+
         #endregion
 
         #region Span<char> to string - lowercase, invariant culture
