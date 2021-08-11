@@ -1,0 +1,65 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build_and_publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Nerdbank.GitVersioning
+        uses: dotnet/nbgv@v0.4.0
+        id: gitversioning
+
+      - name: Setup data
+        id: datavars
+        run: echo "::set-output name=version::$(echo ${{ github.ref }} | cut -d'/' -f3 | tail -c +2)"
+
+      - name: Get version, build, and publish
+        run: |
+          export NUGET_SOURCE=https://www.myget.org/F/pbeta-echelon/api/v2/package
+          export NUGET_SYMBOLSSOURCE=https://www.myget.org/F/pbeta-echelon/api/v3/index.json
+          export PROJ_DIR=ChronosLib
+          export PROJ_NAME=ChronosLib.csproj
+
+          export GIT_BRANCH=${GITHUB_REF#refs/heads/}
+          export VERSION=${{ steps.datavars.outputs.version }}
+
+          echo $VERSION $GIT_BRANCH
+
+          echo Configuring Git...
+          git config --global user.email "build@bot.fake.email"
+          git config --global user.name "Buildbot"
+          git checkout -B workbranch
+          git branch -D v$VERSION || true
+
+          echo Setting version...
+          nbgv set-version $VERSION
+          git commit --all --message="Set version"
+
+          echo Preparing release...
+          nbgv prepare-release
+          git checkout v$VERSION
+
+          echo Building and packing...
+          dotnet pack --include-symbols -p:SymbolPackageFormat=snupkg -c Release $PROJ_DIR/$PROJ_NAME
+
+          echo Publishing MyGet package...
+          dotnet nuget push $PROJ_DIR/bin/Release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} --source $NUGET_SOURCE
+
+          echo Publishing MyGet symbols package...
+          dotnet nuget push $PROJ_DIR/bin/Release/*.snupkg -k ${{ secrets.NUGET_API_KEY }} --source $NUGET_SYMBOLSSOURCE
+
+      - uses: actions/upload-artifact@master
+        with:
+          name: ChronosLib-${{ steps.gitversioning.NuGetPackageVersion }}
+          path: |
+            ChronosLib/bin/Release/*.nupkg
+            ChronosLib/bin/Release/*.snupkg
+            version.json

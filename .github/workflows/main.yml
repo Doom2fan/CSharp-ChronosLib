@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_wrapper:
+    name: Build library
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Get version, build, and pack
+        run: |
+          echo Building and packing...
+          dotnet pack ChronosLib/ChronosLib.csproj -c Release
+      - uses: actions/upload-artifact@v2.2.4
+        with:
+          name: nuget-package
+          path: ChronosLib/bin/Release/ChronosLib*.nupkg
