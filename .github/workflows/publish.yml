@@ -55,7 +55,6 @@ jobs:
 
           echo Publishing MyGet symbols package...
           dotnet nuget push $PROJ_DIR/bin/Release/*.snupkg -k ${{ secrets.NUGET_API_KEY }} --source $NUGET_SYMBOLSSOURCE
-
       - uses: actions/upload-artifact@master
         with:
           name: ChronosLib-${{ steps.gitversioning.NuGetPackageVersion }}

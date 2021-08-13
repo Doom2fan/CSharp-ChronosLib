@@ -14,9 +14,22 @@ jobs:
       - uses: actions/checkout@v1
       - name: Get version, build, and pack
         run: |
+          export NUGET_SOURCE=https://www.myget.org/F/pbeta-echelon/api/v2/package
+          export NUGET_SYMBOLSSOURCE=https://www.myget.org/F/pbeta-echelon/api/v3/index.json
+          export PROJ_DIR=ChronosLib
+          export PROJ_NAME=ChronosLib.csproj
+
           echo Building and packing...
-          dotnet pack ChronosLib/ChronosLib.csproj -c Release
+          dotnet pack --include-symbols -p:SymbolPackageFormat=snupkg -c Release $PROJ_DIR/$PROJ_NAME
+
+          echo Publishing MyGet package...
+          dotnet nuget push $PROJ_DIR/bin/Release/*.nupkg -k ${{ secrets.NUGET_API_KEY }} --source $NUGET_SOURCE
+
+          echo Publishing MyGet symbols package...
+          dotnet nuget push $PROJ_DIR/bin/Release/*.snupkg -k ${{ secrets.NUGET_API_KEY }} --source $NUGET_SYMBOLSSOURCE
       - uses: actions/upload-artifact@v2.2.4
         with:
           name: nuget-package
-          path: ChronosLib/bin/Release/ChronosLib*.nupkg
+          path: |
+            ChronosLib/bin/Release/*.nupkg
+            ChronosLib/bin/Release/*.snupkg
