@@ -107,7 +107,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
 
                 Process (line, lineCount);
 
-                text = text.Slice (lineEnd + 1);
+                text = text.Slice (Math.Min (lineEnd + 1, text.Length));
                 lineCount++;
             }
 
