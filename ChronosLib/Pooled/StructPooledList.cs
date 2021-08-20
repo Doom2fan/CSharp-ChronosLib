@@ -312,7 +312,7 @@ namespace ChronosLib.Pooled {
 
             if (clearOnFree) {
                 // Clear the removed elements so that the gc can reclaim the reference.
-                Array.Clear (items, size - count - 1, count);
+                Array.Clear (items, size - count, count);
             }
 
             size -= count;
