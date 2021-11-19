@@ -14,10 +14,11 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Threading;
+using CommunityToolkit.HighPerformance;
 
 namespace ChronosLib.Pooled {
-    public struct StructPooledList<T> : IList<T>, IReadOnlyList<T>, IList, IDisposable {
+    [NonCopyable]
+    public struct StructPooledList<T> : IList<T>, IReadOnlyList<T>, IDisposable {
         #region ================== Constants
 
         private const int maxArrayLength = 0x7FEFFFFF;
@@ -40,9 +41,34 @@ namespace ChronosLib.Pooled {
 
         #region ================== Constructors
 
-        public StructPooledList (CL_ClearMode clearMode)
-            : this (clearMode, null) {
+        /// <summary>Used only for copying or moving the list.</summary>
+        private StructPooledList (ref StructPooledList<T> other, bool move) {
+            IsDisposed = false;
+
+            pool = other.pool;
+            clearOnFree = other.clearOnFree;
+
+            if (move) {
+                syncRoot = other.syncRoot;
+
+                items = other.items;
+                size = other.size;
+                version = other.version;
+
+                other.syncRoot = null;
+                other.InternalDispose ();
+            } else {
+                syncRoot = null;
+
+                items = emptyArray;
+                size = 0;
+                version = 0;
+
+                AddRange (other.Span);
+            }
         }
+
+        public StructPooledList (CL_ClearMode clearMode) : this (clearMode, null) { }
 
         public StructPooledList (CL_ClearMode clearMode, ArrayPool<T>? customPool)
             : this () {
@@ -69,20 +95,6 @@ namespace ChronosLib.Pooled {
 
                 version++;
                 items [idx] = value;
-            }
-        }
-
-        object? IList.this [int index] {
-            get => this [index];
-
-            set {
-                PooledUtils.EnsureNotNull<T> (value, nameof (value));
-
-                try {
-                    this [index] = (T) value!;
-                } catch (InvalidCastException) {
-                    throw new ArgumentException ($"Wrong value type. Expected {typeof (T).ToString ()}, got '{value!.GetType ().Name}'");
-                }
             }
         }
 
@@ -215,15 +227,7 @@ namespace ChronosLib.Pooled {
         }
 
         /// <inheritdoc/>
-        public void AddRange (StructPooledList<T> newItems) {
-            int startPos = size;
-            EnsureCapacity (size + newItems.Count);
-
-            Array.Copy (newItems.items, 0, items, startPos, newItems.Count);
-
-            version++;
-            size += newItems.Count;
-        }
+        public void AddRange (ref StructPooledList<T> newItems) => AddRange (newItems.Span);
 
         /// <inheritdoc/>
         public void AddRange (ReadOnlySpan<T> newItems) {
@@ -353,17 +357,7 @@ namespace ChronosLib.Pooled {
 
         #region Enumeration
 
-        public Enumerator GetEnumerator () {
-            return new Enumerator (this);
-        }
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator () {
-            return new Enumerator (this);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator () {
-            return new Enumerator (this);
-        }
+        public Enumerator GetEnumerator () => new Enumerator (ref this);
 
         #endregion
 
@@ -387,14 +381,26 @@ namespace ChronosLib.Pooled {
             return arr;
         }
 
+        public StructPooledList<T> Clone () => new StructPooledList<T> (ref this, false);
+
+        public StructPooledList<T> Move () => new StructPooledList<T> (ref this, true);
+
+        public PooledArray<T> MoveToArray () {
+            var ret = new PooledArray<T> (pool, items, size);
+
+            InternalDispose ();
+
+            return ret;
+        }
+
         #endregion
 
         #region ================== Enumerator
 
-        public struct Enumerator : IEnumerator<T>, IEnumerator {
+        public ref struct Enumerator {
             #region ================== Instance fields
 
-            private readonly StructPooledList<T> list;
+            private readonly Ref<StructPooledList<T>> list;
             private int index;
             private readonly int version;
             private T current;
@@ -403,14 +409,12 @@ namespace ChronosLib.Pooled {
 
             #region ================== Instance properties
 
-            public T Current => current;
-
-            object? IEnumerator.Current {
+            public T Current {
                 get {
-                    if (index == 0 || index == list.size + 1)
+                    if (index == 0 || index == list.Value.size + 1)
                         throw new InvalidOperationException ("Invalid enumerator state: enumeration cannot proceed.");
 
-                    return Current;
+                    return current;
                 }
             }
 
@@ -418,8 +422,8 @@ namespace ChronosLib.Pooled {
 
             #region ================== Constructors
 
-            internal Enumerator (StructPooledList<T> list) {
-                this.list = list;
+            internal Enumerator (ref StructPooledList<T> list) {
+                this.list = new Ref<StructPooledList<T>> (ref list);
                 index = 0;
                 version = list.version;
                 current = default!;
@@ -432,8 +436,8 @@ namespace ChronosLib.Pooled {
             public bool MoveNext () {
                 var localList = list;
 
-                if (version == localList.version && ((uint) index < (uint) localList.size)) {
-                    current = localList.items [index];
+                if (version == localList.Value.version && ((uint) index < (uint) localList.Value.size)) {
+                    current = localList.Value.items [index];
                     index++;
                     return true;
                 }
@@ -442,16 +446,16 @@ namespace ChronosLib.Pooled {
             }
 
             private bool MoveNextRare () {
-                if (version != list.version)
+                if (version != list.Value.version)
                     throw new InvalidOperationException ("Collection was modified during enumeration.");
 
-                index = list.size + 1;
+                index = list.Value.size + 1;
                 current = default!;
                 return false;
             }
 
             public void Reset () {
-                if (version != list.version)
+                if (version != list.Value.version)
                     throw new InvalidOperationException ("Collection was modified during enumeration.");
 
                 index = 0;
@@ -467,75 +471,16 @@ namespace ChronosLib.Pooled {
 
         #region ================== Interface implementations
 
-        #region IList
+        #region IEnumerable
 
-        bool IList.IsFixedSize => false;
-
-        bool IList.IsReadOnly => false;
-
-        int IList.Add (object? item) {
-            if (PooledUtils.IsCompatibleObject<T> (item)) {
-                Add ((T) item!);
-                return size - 1;
-            }
-
-            return -1;
-        }
-
-        void IList.Insert (int index, object? item) {
-            if (PooledUtils.IsCompatibleObject<T> (item))
-                Insert (index, (T) item!);
-        }
-
-        void IList.Remove (object? item) {
-            if (PooledUtils.IsCompatibleObject<T> (item))
-                Remove ((T) item!);
-        }
-
-        int IList.IndexOf (object? item) {
-            if (PooledUtils.IsCompatibleObject<T> (item))
-                return IndexOf ((T) item!);
-
-            return -1;
-        }
-
-        bool IList.Contains (object? item) {
-            if (PooledUtils.IsCompatibleObject<T> (item))
-                return Contains ((T) item!);
-
-            return false;
-        }
+        IEnumerator<T> IEnumerable<T>.GetEnumerator () => throw new NotSupportedException ();
+        IEnumerator IEnumerable.GetEnumerator () => throw new NotSupportedException ();
 
         #endregion
 
         #region ICollection
 
         bool ICollection<T>.IsReadOnly => false;
-
-        bool ICollection.IsSynchronized => false;
-
-        // Synchronization root for this object.
-        object ICollection.SyncRoot {
-            get {
-                Interlocked.CompareExchange<object?> (ref syncRoot, new object (), null);
-
-                return syncRoot;
-            }
-        }
-
-        void ICollection.CopyTo (Array array, int index) {
-            if (array == null)
-                throw new ArgumentNullException (nameof (array));
-            if (array != null && array.Rank != 1)
-                throw new ArgumentException ("Multidimensional arrays not supported.");
-
-            try {
-                // Array.Copy will check for NULL.
-                Array.Copy (items, 0, array!, index, size);
-            } catch (ArrayTypeMismatchException) {
-                throw new ArgumentException ("Invalid array type.");
-            }
-        }
 
         #endregion
 
@@ -545,10 +490,19 @@ namespace ChronosLib.Pooled {
 
         public bool IsDisposed { get; private set; }
 
+        private void InternalDispose () {
+            items = emptyArray;
+            size = 0;
+            version++;
+
+            IsDisposed = true;
+        }
+
         public void Dispose () {
             if (!IsDisposed) {
                 ReturnArray ();
                 size = 0;
+                version++;
 
                 IsDisposed = true;
             }

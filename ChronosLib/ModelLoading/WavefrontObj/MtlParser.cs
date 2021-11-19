@@ -10,7 +10,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using ChronosLib.FileLoading;
@@ -83,7 +82,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         public MtlLibrary FinalizeLibrary () {
             FinalizeCurrentMaterial ();
 
-            var lib = new MtlLibrary (materials);
+            var lib = new MtlLibrary (materials.Span);
 
             Reset ();
 
@@ -264,8 +263,12 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
 
         #region ================== Constructors
 
-        public MtlLibrary (IEnumerable<MaterialDefinition> definitions) {
-            Definitions = definitions.ToDictionary (def => def.Name);
+        public MtlLibrary (ReadOnlySpan<MaterialDefinition> definitions) {
+            var defsDict = new Dictionary<string, MaterialDefinition> (definitions.Length);
+            foreach (var def in definitions)
+                defsDict [def.Name] = def;
+
+            Definitions = defsDict;
         }
 
         #endregion

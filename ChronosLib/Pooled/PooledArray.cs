@@ -11,6 +11,7 @@
 
 using System;
 using System.Buffers;
+using System.Diagnostics;
 
 namespace ChronosLib.Pooled {
     public struct PooledArray<T> : IDisposable {
@@ -22,9 +23,7 @@ namespace ChronosLib.Pooled {
             };
         }
 
-        public static PooledArray<T> GetArray (int length) {
-            return GetArray (length, ArrayPool<T>.Shared);
-        }
+        public static PooledArray<T> GetArray (int length) => GetArray (length, ArrayPool<T>.Shared);
 
         public static PooledArray<T> GetArray (int length, ArrayPool<T> pool) {
             if (length == 0)
@@ -37,6 +36,16 @@ namespace ChronosLib.Pooled {
             };
 
             return newArr;
+        }
+
+        internal PooledArray (ArrayPool<T> pool, T [] array, int length) {
+            Debug.Assert (length > 0);
+
+            arrayPool = pool;
+            RealLength = length;
+            Array = array;
+
+            disposedValue = false;
         }
 
         #region ================== Instance fields
