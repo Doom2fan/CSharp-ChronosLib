@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using ChronosLib.Pooled;
 
 namespace ChronosLib {
     internal static class Utils {
@@ -227,6 +228,39 @@ namespace ChronosLib {
                 ((uhash << c) | (uhash >> (32 - c)));
 
             return (int) rehashed;
+        }
+
+        internal static PooledArray<Range> SplitSpan<T> (ReadOnlySpan<T> span, ReadOnlySpan<T> splitters, bool includeEmpty = false)
+            where T : IEquatable<T> {
+            using var splitsArr = new StructPooledList<Range> (CL_ClearMode.Auto);
+
+            var currentPoint = 0;
+            while (currentPoint < span.Length) {
+                var hasSplit = false;
+                for (int i = 0; i < splitters.Length; i++) {
+                    var idx = span [currentPoint..].IndexOf (splitters [i..(i+1)]);
+                    if (idx < 0)
+                        continue;
+
+                    idx += currentPoint;
+
+                    if (includeEmpty || idx - currentPoint > 0)
+                        splitsArr.Add (new Range (currentPoint, idx));
+                    currentPoint = idx + 1;
+                    hasSplit = true;
+
+                    break;
+                }
+
+                if (!hasSplit) {
+                    if (span.Length - currentPoint > 0)
+                        splitsArr.Add (new Range (currentPoint, span.Length));
+
+                    break;
+                }
+            }
+
+            return splitsArr.MoveToArray ();
         }
     }
 

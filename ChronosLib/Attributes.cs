@@ -8,6 +8,9 @@
  */
 
 using System;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo ("UnitTests")]
 
 namespace ChronosLib {
     [AttributeUsage (AttributeTargets.Struct)]
