@@ -393,6 +393,13 @@ namespace ChronosLib.Pooled {
             return ret;
         }
 
+        public void Reinit () {
+            if (items != emptyArray)
+                Dispose ();
+
+            IsDisposed = false;
+        }
+
         #endregion
 
         #region ================== Enumerator
