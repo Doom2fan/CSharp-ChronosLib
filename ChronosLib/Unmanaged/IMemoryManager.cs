@@ -23,10 +23,23 @@ namespace ChronosLib.Unmanaged {
         #region ================== Methods
 
         /// <summary>Allocates memory.</summary>
-        /// <param name="count">How much memory to allocate.</param>
+        /// <param name="bytesCount">How much memory to allocate.</param>
         /// <returns>Returns a pointer to the allocated memory.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if bytesCount is lower than 1.</exception>
-        IntPtr GetMemory (int bytesCount);
+        IntPtr GetMemory (nint bytesCount);
+
+        /// <summary>Allocates memory.</summary>
+        /// <param name="bytesCount">How much memory to allocate.</param>
+        /// <returns>Returns a pointer to the allocated memory.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if bytesCount is lower than 1.</exception>
+        IntPtr GetMemory (int bytesCount) => GetMemory ((nint) bytesCount);
+
+        /// <summary>Allocates memory aligned to the specified value.</summary>
+        /// <param name="bytesCount">How much memory to allocate.</param>
+        /// <param name="alignment">The value to align the memory to.</param>
+        /// <returns>Returns a pointer to the allocated memory.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if bytesCount is lower than 1.</exception>
+        IntPtr GetMemoryAligned (nint bytesCount, nint alignment);
 
         /// <summary>Allocates memory for the specified number of instances of T.</summary>
         /// <typeparam name="T">The type to allocate.</typeparam>

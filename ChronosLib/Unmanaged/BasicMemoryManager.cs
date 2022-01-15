@@ -41,13 +41,28 @@ namespace ChronosLib.Unmanaged {
         public int FindOwnedMemory (IntPtr pointer)
             => ownedMemory.BinarySearch (pointer, IntPtrComparer.Instance);
 
-        public IntPtr GetMemory (int bytesCount) {
+        public IntPtr GetMemory (nint bytesCount) {
             CheckDisposed ();
 
             if (bytesCount < 1)
                 throw new ArgumentOutOfRangeException (nameof (bytesCount), "The number of bytes to allocate must be greater than 0.");
 
-            var mem = AllocateMemory (bytesCount);
+            var mem = AllocateMemory ((nuint) bytesCount);
+
+            var memIdx = FindOwnedMemory (mem);
+            Debug.Assert (memIdx < 0, "This should never happen.");
+            ownedMemory.Insert (~memIdx, mem);
+
+            return mem;
+        }
+
+        public IntPtr GetMemoryAligned (nint bytesCount, nint alignment) {
+            CheckDisposed ();
+
+            if (bytesCount < 1)
+                throw new ArgumentOutOfRangeException (nameof (bytesCount), "The number of bytes to allocate must be greater than 0.");
+
+            var mem = AllocateMemoryAligned ((nuint) bytesCount, (nuint) alignment);
 
             var memIdx = FindOwnedMemory (mem);
             Debug.Assert (memIdx < 0, "This should never happen.");
@@ -73,13 +88,11 @@ namespace ChronosLib.Unmanaged {
                 throw new ObjectDisposedException (GetType ().Name);
         }
 
-        private IntPtr AllocateMemory (int bytesCount) {
-            return (IntPtr) mi_malloc ((nuint) bytesCount)!;
-        }
+        private IntPtr AllocateMemory (nuint bytesCount) => (IntPtr) mi_malloc (bytesCount)!;
 
-        private void FreeMemory (IntPtr ptr) {
-            mi_free ((void*) ptr);
-        }
+        private IntPtr AllocateMemoryAligned (nuint bytesCount, nuint alignment) => (IntPtr) mi_malloc_aligned (bytesCount, alignment)!;
+
+        private void FreeMemory (IntPtr ptr) => mi_free ((void*) ptr);
 
         #endregion
 
@@ -110,9 +123,7 @@ namespace ChronosLib.Unmanaged {
             }
         }
 
-        public void Dispose () {
-            Dispose (true);
-        }
+        public void Dispose () => Dispose (true);
 
         #endregion
     }
