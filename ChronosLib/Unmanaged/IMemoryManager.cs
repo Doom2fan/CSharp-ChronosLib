@@ -36,7 +36,7 @@ namespace ChronosLib.Unmanaged {
 
         /// <summary>Allocates memory aligned to the specified value.</summary>
         /// <param name="bytesCount">How much memory to allocate.</param>
-        /// <param name="alignment">The value to align the memory to.</param>
+        /// <param name="alignment">The value to align the memory by.</param>
         /// <returns>Returns a pointer to the allocated memory.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if bytesCount is lower than 1.</exception>
         IntPtr GetMemoryAligned (nint bytesCount, nint alignment);
@@ -55,6 +55,25 @@ namespace ChronosLib.Unmanaged {
                 throw new ArgumentException (nameof (T), "T cannot be empty/have no size.");
 
             var ptr = GetMemory (sizeof (T) * count);
+
+            return (T*) ptr;
+        }
+
+        /// <summary>Allocates memory for the specified number of instances of T, aligned by the specified value.</summary>
+        /// <typeparam name="T">The type to allocate.</typeparam>
+        /// <param name="count">The amount of instances to allocate.</param>
+        /// <param name="alignment">The value to align the memory by.</param>
+        /// <returns>Returns a pointer to the allocated memory.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown if count is lower than 1.</exception>
+        /// <exception cref="ArgumentException">Thrown if the size of <typeparamref name="T"/> has no size.</exception>
+        T* GetMemoryAligned<T> (nint alignment, int count = 1)
+            where T : unmanaged {
+            if (count < 1)
+                throw new ArgumentOutOfRangeException (nameof (count), "Count must be greater than 0.");
+            if (sizeof (T) < 1)
+                throw new ArgumentException (nameof (T), "T cannot be empty/have no size.");
+
+            var ptr = GetMemoryAligned ((nint) sizeof (T) * count, alignment);
 
             return (T*) ptr;
         }
