@@ -50,7 +50,7 @@ namespace ChronosLib.Pooled {
 
         #region ================== Instance fields
 
-        private ArrayPool<T>? arrayPool;
+        private ArrayPool<T> arrayPool;
 
         #endregion
 
@@ -71,18 +71,26 @@ namespace ChronosLib.Pooled {
 
         #endregion
 
+        #region ================== Instance methods
+
+        public StructPooledList<T> MoveToStructPooledList (CL_ClearMode clearMode)
+            => new StructPooledList<T> (clearMode, arrayPool, Array, RealLength);
+
+        #endregion
+
         #region ================== IDisposable support
 
         private bool disposedValue;
 
         public void Dispose () {
-            if (!disposedValue) {
-                arrayPool?.Return (Array);
-                RealLength = 0;
-                Array = System.Array.Empty<T> ();
+            if (disposedValue)
+                return;
 
-                disposedValue = true;
-            }
+            arrayPool?.Return (Array);
+            RealLength = 0;
+            Array = System.Array.Empty<T> ();
+
+            disposedValue = true;
         }
 
         #endregion
