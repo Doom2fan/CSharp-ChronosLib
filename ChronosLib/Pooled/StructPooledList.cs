@@ -77,7 +77,7 @@ namespace ChronosLib.Pooled {
             items = emptyArray;
         }
 
-        internal StructPooledList (CL_ClearMode clearMode, ArrayPool<T> arrayPool, T [] array, int length)
+        internal StructPooledList (CL_ClearMode clearMode, ArrayPool<T>? arrayPool, T [] array, int length)
             : this (clearMode, arrayPool) {
             items = array;
             size = length;

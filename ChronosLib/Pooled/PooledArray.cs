@@ -50,7 +50,7 @@ namespace ChronosLib.Pooled {
 
         #region ================== Instance fields
 
-        private ArrayPool<T> arrayPool;
+        private ArrayPool<T>? arrayPool;
 
         #endregion
 
