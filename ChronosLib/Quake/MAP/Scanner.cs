@@ -233,7 +233,8 @@ namespace ChronosLib.Quake.MAP.Internal {
         }
 
         private void ParseDecimal (ref MAPTokenType type) {
-            bool foundFrac = false;
+            var foundFrac = false;
+            var foundExponent = false;
 
             char c;
             while (true) {
@@ -244,11 +245,19 @@ namespace ChronosLib.Quake.MAP.Internal {
                 } else if (!foundFrac && c == '.') {
                     foundFrac = true;
                     _ = ReadChar ();
+                } else if (!foundExponent && c == 'e') {
+                    foundFrac = true;
+                    foundExponent = true;
+                    _ = ReadChar ();
+
+                    c = (char) PeekChar ();
+                    if (c == '+' || c == '-')
+                        _ = ReadChar ();
                 } else
                     break;
             }
 
-            type = (foundFrac ? MAPTokenType.Float : MAPTokenType.Integer);
+            type = (foundFrac || foundExponent) ? MAPTokenType.Float : MAPTokenType.Integer;
         }
 
         #endregion
