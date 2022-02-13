@@ -73,8 +73,13 @@ namespace ChronosLib.Pooled {
 
         #region ================== Instance methods
 
-        public StructPooledList<T> MoveToStructPooledList (CL_ClearMode clearMode)
-            => new StructPooledList<T> (clearMode, arrayPool, Array, RealLength);
+        public StructPooledList<T> MoveToStructPooledList (CL_ClearMode clearMode) {
+            var ret = new StructPooledList<T> (clearMode, arrayPool, Array, RealLength);
+
+            this = Empty ();
+
+            return ret.Move ();
+        }
 
         #endregion
 
