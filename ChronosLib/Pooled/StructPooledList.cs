@@ -13,7 +13,6 @@ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using CommunityToolkit.HighPerformance;
 
 namespace ChronosLib.Pooled {
@@ -72,7 +71,7 @@ namespace ChronosLib.Pooled {
 
         public StructPooledList (CL_ClearMode clearMode, ArrayPool<T>? customPool)
             : this () {
-            clearOnFree = ShouldClear (clearMode);
+            clearOnFree = PooledUtils.ShouldClear<T> (clearMode);
             pool = customPool ?? ArrayPool<T>.Shared;
             items = emptyArray;
         }
@@ -153,11 +152,6 @@ namespace ChronosLib.Pooled {
         #endregion
 
         #region ================== Instance methods
-
-        private static bool ShouldClear (CL_ClearMode mode) {
-            return mode == CL_ClearMode.Always
-                || (mode == CL_ClearMode.Auto && RuntimeHelpers.IsReferenceOrContainsReferences<T> ());
-        }
 
         private void ReturnArray () {
             if (items.Length == 0)
@@ -392,7 +386,7 @@ namespace ChronosLib.Pooled {
         public StructPooledList<T> Move () => new StructPooledList<T> (ref this, true);
 
         public PooledArray<T> MoveToArray () {
-            var ret = new PooledArray<T> (pool, items, size);
+            var ret = new PooledArray<T> (pool, clearOnFree, items, size);
 
             InternalDispose ();
 

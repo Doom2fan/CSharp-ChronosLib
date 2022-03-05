@@ -15,32 +15,30 @@ using System.Diagnostics;
 
 namespace ChronosLib.Pooled {
     public struct PooledArray<T> : IDisposable {
-        public static PooledArray<T> Empty () {
-            return new PooledArray<T> {
-                Array = System.Array.Empty<T> (),
-                arrayPool = null,
-                RealLength = 0,
-            };
-        }
+        public static PooledArray<T> Empty () => new (null, false, System.Array.Empty<T> (), 0);
 
-        public static PooledArray<T> GetArray (int length) => GetArray (length, ArrayPool<T>.Shared);
+        public static PooledArray<T> GetArray (int length) => GetArray (length, CL_ClearMode.Auto, ArrayPool<T>.Shared);
 
-        public static PooledArray<T> GetArray (int length, ArrayPool<T> pool) {
+        public static PooledArray<T> GetArray (int length, ArrayPool<T> pool)
+            => GetArray (length, CL_ClearMode.Auto, pool);
+
+        public static PooledArray<T> GetArray (int length, CL_ClearMode clearMode)
+            => GetArray (length, clearMode, ArrayPool<T>.Shared);
+
+        public static PooledArray<T> GetArray (int length, CL_ClearMode clearMode, ArrayPool<T> pool) {
             if (length == 0)
                 return Empty ();
 
-            var newArr = new PooledArray<T> {
-                arrayPool = pool,
-                RealLength = length,
-                Array = pool.Rent (length),
-            };
-
-            return newArr;
+            return new (pool, clearMode, pool.Rent (length), length);
         }
 
-        internal PooledArray (ArrayPool<T> pool, T [] array, int length) {
+        internal PooledArray (ArrayPool<T>? pool, CL_ClearMode clearMode, T [] array, int length)
+            : this (pool, PooledUtils.ShouldClear<T> (clearMode), array, length) { }
+
+        internal PooledArray (ArrayPool<T>? pool, bool clear, T [] array, int length) {
             Debug.Assert (length > 0);
 
+            clearOnFree = clear;
             arrayPool = pool;
             RealLength = length;
             Array = array;
@@ -50,6 +48,7 @@ namespace ChronosLib.Pooled {
 
         #region ================== Instance fields
 
+        private bool clearOnFree;
         private ArrayPool<T>? arrayPool;
 
         #endregion
@@ -59,6 +58,7 @@ namespace ChronosLib.Pooled {
         public int RealLength { get; private set; }
         public T [] Array { get; private set; }
 
+        public CL_ClearMode ClearMode => clearOnFree ? CL_ClearMode.Always : CL_ClearMode.Never;
         public Span<T> Span => Array.AsSpan (0, RealLength);
 
         #endregion
@@ -72,6 +72,8 @@ namespace ChronosLib.Pooled {
         #endregion
 
         #region ================== Instance methods
+
+        public StructPooledList<T> MoveToStructPooledList () => MoveToStructPooledList (ClearMode);
 
         public StructPooledList<T> MoveToStructPooledList (CL_ClearMode clearMode) {
             var ret = new StructPooledList<T> (clearMode, arrayPool, Array, RealLength);
@@ -90,6 +92,9 @@ namespace ChronosLib.Pooled {
         public void Dispose () {
             if (disposedValue)
                 return;
+
+            if (clearOnFree)
+                System.Array.Clear (Array, 0, RealLength);
 
             arrayPool?.Return (Array);
             RealLength = 0;

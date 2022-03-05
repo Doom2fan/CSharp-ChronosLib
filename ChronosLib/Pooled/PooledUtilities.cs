@@ -16,6 +16,11 @@ using CommunityToolkit.HighPerformance.Buffers;
 
 namespace ChronosLib.Pooled {
     public static class PooledUtils {
+        public static bool ShouldClear<T> (CL_ClearMode mode) {
+            return mode == CL_ClearMode.Always
+                || (mode == CL_ClearMode.Auto && RuntimeHelpers.IsReferenceOrContainsReferences<T> ());
+        }
+
         internal static bool IsCompatibleObject<T> (object? value) {
             // Non-null values are fine.  Only accept nulls if T is a class or Nullable<U>.
             // Note that default(T) is not equal to null for value types except when T is Nullable<U>.
@@ -31,14 +36,10 @@ namespace ChronosLib.Pooled {
         #region Span<char> to string
 
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static string GetPooledString (this Span<char> chars) {
-            return StringPool.Shared.GetOrAdd (chars);
-        }
+        public static string GetPooledString (this Span<char> chars) => StringPool.Shared.GetOrAdd (chars);
 
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static string GetPooledString (this ReadOnlySpan<char> chars) {
-            return StringPool.Shared.GetOrAdd (chars);
-        }
+        public static string GetPooledString (this ReadOnlySpan<char> chars) => StringPool.Shared.GetOrAdd (chars);
 
         #endregion
 
@@ -73,9 +74,8 @@ namespace ChronosLib.Pooled {
         #region Span<char> to string - lowercase, invariant culture
 
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static string GetPooledString_LowerInvariant (this Span<char> str) {
-            return ((ReadOnlySpan<char>) str).GetPooledString_LowerInvariant ();
-        }
+        public static string GetPooledString_LowerInvariant (this Span<char> str)
+            => ((ReadOnlySpan<char>) str).GetPooledString_LowerInvariant ();
 
         public static string GetPooledString_LowerInvariant (this ReadOnlySpan<char> str) {
             // Calculate the total length after turning it lowercase. Shouldn't change, but lol Unicode so there's no guarantees.
@@ -139,9 +139,8 @@ namespace ChronosLib.Pooled {
         }
 
         [MethodImpl (MethodImplOptions.AggressiveInlining)]
-        public static PooledArray<char> GetPooledChars (this Span<Rune> runes) {
-            return ((ReadOnlySpan<Rune>) runes).GetPooledChars ();
-        }
+        public static PooledArray<char> GetPooledChars (this Span<Rune> runes)
+            => ((ReadOnlySpan<Rune>) runes).GetPooledChars ();
 
         #endregion
     }
