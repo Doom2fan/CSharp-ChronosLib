@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@master
       - name: Get version, build, and pack
         run: |
           export NUGET_SOURCE=https://www.myget.org/F/pbeta-echelon/api/v2/package
@@ -27,7 +27,7 @@ jobs:
 
           echo Publishing MyGet symbols package...
           dotnet nuget push $PROJ_DIR/bin/Release/*.snupkg -k ${{ secrets.NUGET_API_KEY }} --source $NUGET_SYMBOLSSOURCE
-      - uses: actions/upload-artifact@v2.2.4
+      - uses: actions/upload-artifact@master
         with:
           name: nuget-package
           path: |

@@ -11,15 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@master
 
       - name: Nerdbank.GitVersioning
-        uses: dotnet/nbgv@v0.4.0
+        uses: dotnet/nbgv@master
         id: gitversioning
 
       - name: Setup data
         id: datavars
-        run: echo "::set-output name=version::$(echo ${{ github.ref }} | cut -d'/' -f3 | tail -c +2)"
+        run: echo "version=$(echo ${{ github.ref }} | cut -d'/' -f3 | tail -c +2)"
 
       - name: Get version, build, and publish
         run: |
