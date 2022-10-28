@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using ChronosLib.Pooled;
 
 namespace ChronosLib.Doom.WAD {
     public class WADException : Exception {
@@ -190,20 +191,21 @@ namespace ChronosLib.Doom.WAD {
 
             stream.Seek (0, SeekOrigin.Begin);
 
-            var headerBytes = new byte [HEADERSIZE];
+            Span<byte> headerBytes = stackalloc byte [HEADERSIZE];
 
-            if (stream.Read (headerBytes, 0, HEADERSIZE) != HEADERSIZE)
+            if (stream.Read (headerBytes) != HEADERSIZE)
                 throw new WADLoadException ("Invalid WAD file", WADLoadException.ErrorType.InvalidWAD);
 
-            string id = Encoding.ASCII.GetString (headerBytes, 0, 4);
+            Span<char> id = stackalloc char [4];
+            Encoding.ASCII.GetChars (headerBytes, id);
 
-            if (!id.Equals ("IWAD") && !id.Equals ("PWAD"))
+            var isIWAD = id.Equals ("IWAD");
+
+            if (!isIWAD && !id.Equals ("PWAD"))
                 throw new WADLoadException ("Not a WAD file", WADLoadException.ErrorType.NotWAD);
 
-            bool isIWAD = id.Equals ("IWAD");
-
-            int numLumps = Utils.BitConversion.LittleEndian.ToInt32 (headerBytes, 4);
-            int infoTableOfs = Utils.BitConversion.LittleEndian.ToInt32 (headerBytes, 8);
+            var numLumps = BitConversion.LittleEndian.ToInt32 (headerBytes [4..]);
+            var infoTableOfs = BitConversion.LittleEndian.ToInt32 (headerBytes [8..]);
 
             if (numLumps < 0)
                 throw new WADLoadException ("Invalid WAD file", WADLoadException.ErrorType.InvalidWAD);
@@ -217,24 +219,26 @@ namespace ChronosLib.Doom.WAD {
                 stream = ramStream;
             }
 
-            byte [] directoryBytes = new byte [numLumps * LUMPINFOSIZE];
+            using var directoryBytesArr = PooledArray<byte>.GetArray (numLumps * LUMPINFOSIZE);
+            var directoryBytes = directoryBytesArr.Span;
 
             stream.Seek (infoTableOfs, SeekOrigin.Begin);
-            stream.Read (directoryBytes, 0, numLumps * LUMPINFOSIZE);
+            if (stream.Read (directoryBytes) != directoryBytes.Length)
+                throw new WADLoadException ("Invalid WAD file", WADLoadException.ErrorType.InvalidWAD);
             var lumps = new WADLumpCollection (numLumps);
 
             var wad = new WAD ();
 
             for (int i = 0; i < numLumps; i++) {
                 var lmp = new WADLump ();
-                int lmpStart = i * LUMPINFOSIZE;
+                var lmpStart = i * LUMPINFOSIZE;
 
                 lmp.Source = wad;
 
-                lmp.FilePos = Utils.BitConversion.LittleEndian.ToInt32 (directoryBytes, lmpStart);
-                lmp.Size = Utils.BitConversion.LittleEndian.ToInt32 (directoryBytes, lmpStart + 4);
+                lmp.FilePos = BitConversion.LittleEndian.ToInt32 (directoryBytes [lmpStart..]);
+                lmp.Size = BitConversion.LittleEndian.ToInt32 (directoryBytes [(lmpStart + 4)..]);
 
-                var nameSpan = new ReadOnlySpan<byte> (directoryBytes, lmpStart + 8, 8);
+                var nameSpan = directoryBytes.Slice (lmpStart + 8, 8);
                 var nulIdx = nameSpan.IndexOf ((byte) '\0');
                 if (nulIdx > -1)
                     nameSpan = nameSpan.Slice (0, nulIdx);

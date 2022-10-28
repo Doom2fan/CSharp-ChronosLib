@@ -9,212 +9,121 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using ChronosLib.Pooled;
 
 namespace ChronosLib {
-    internal static class Utils {
-        internal static class BitConversion {
-            internal static class BigEndian {
-                #region Signed
+    public static class BitConversion {
+        public static class BigEndian {
+            private unsafe static T ToX<T> (ReadOnlySpan<byte> bytes) where T : unmanaged {
+                Span<byte> buffer = stackalloc byte [sizeof (T)];
+                bytes [..sizeof (T)].CopyTo (buffer);
 
-                internal static int ToInt32 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 4 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
+                if (BitConverter.IsLittleEndian)
+                    buffer.Reverse ();
 
-                    var buffer = new byte [4];
-                    Array.Copy (value, startIndex, buffer, 0, 4);
-
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToInt32 (buffer, 0);
-                }
-
-                internal static short ToInt16 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 2 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [2];
-                    Array.Copy (value, startIndex, buffer, 0, 2);
-
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToInt16 (buffer, 0);
-                }
-
-                internal static long ToInt64 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 8 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [8];
-                    Array.Copy (value, startIndex, buffer, 0, 8);
-
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToInt64 (buffer, 0);
-                }
-
-                #endregion
-
-                #region Unsigned
-
-                internal static uint ToUInt32 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 4 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [4];
-                    Array.Copy (value, startIndex, buffer, 0, 4);
-
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToUInt32 (buffer, 0);
-                }
-
-                internal static ushort ToUInt16 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 2 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [2];
-                    Array.Copy (value, startIndex, buffer, 0, 2);
-
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToUInt16 (buffer, 0);
-                }
-
-                internal static ulong ToUInt64 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 8 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [8];
-                    Array.Copy (value, startIndex, buffer, 0, 8);
-
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToUInt64 (buffer, 0);
-                }
-
-                #endregion
+                return Unsafe.ReadUnaligned<T> (ref buffer [0]);
             }
 
-            internal static class LittleEndian {
-                #region Signed
+            public static int ToInt32 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (int))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
 
-                internal static int ToInt32 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 4 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
+                return ToX<int> (bytes);
+            }
 
-                    var buffer = new byte [4];
-                    Array.Copy (value, startIndex, buffer, 0, 4);
+            public static short ToInt16 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (short))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
 
-                    if (!BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
+                return ToX<short> (bytes);
+            }
 
-                    return BitConverter.ToInt32 (buffer, 0);
-                }
+            public static long ToInt64 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (long))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
 
-                internal static short ToInt16 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 2 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
+                return ToX<long> (bytes);
+            }
 
-                    var buffer = new byte [2];
-                    Array.Copy (value, startIndex, buffer, 0, 2);
+            public static uint ToUInt32 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (uint))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
 
-                    if (!BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
+                return ToX<uint> (bytes);
+            }
 
-                    return BitConverter.ToInt16 (buffer, 0);
-                }
+            public static ushort ToUInt16 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (ushort))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
 
-                internal static long ToInt64 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 8 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
+                return ToX<ushort> (bytes);
+            }
 
-                    var buffer = new byte [8];
-                    Array.Copy (value, startIndex, buffer, 0, 8);
+            public static ulong ToUInt64 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (ulong))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
 
-                    if (!BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToInt64 (buffer, 0);
-                }
-
-                #endregion
-
-                #region Unsigned
-
-                internal static uint ToUInt32 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 4 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [4];
-                    Array.Copy (value, startIndex, buffer, 0, 4);
-
-                    if (!BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToUInt32 (buffer, 0);
-                }
-
-                internal static ushort ToUInt16 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 2 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [2];
-                    Array.Copy (value, startIndex, buffer, 0, 2);
-
-                    if (!BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToUInt16 (buffer, 0);
-                }
-
-                internal static ulong ToUInt64 (byte [] value, int startIndex = 0) {
-                    if (value is null)
-                        throw new ArgumentNullException ("value");
-                    if (startIndex + 8 > value.Length)
-                        throw new ArgumentOutOfRangeException ("startIndex");
-
-                    var buffer = new byte [8];
-                    Array.Copy (value, startIndex, buffer, 0, 8);
-
-                    if (!BitConverter.IsLittleEndian)
-                        Array.Reverse (buffer);
-
-                    return BitConverter.ToUInt64 (buffer, 0);
-                }
-
-                #endregion
+                return ToX<ulong> (bytes);
             }
         }
 
+        public static class LittleEndian {
+            private unsafe static T ToX<T> (ReadOnlySpan<byte> bytes) where T : unmanaged {
+                Span<byte> buffer = stackalloc byte [sizeof (T)];
+                bytes [..sizeof (T)].CopyTo (buffer);
+
+                if (!BitConverter.IsLittleEndian)
+                    buffer.Reverse ();
+
+                return Unsafe.ReadUnaligned<T> (ref buffer [0]);
+            }
+
+            public static int ToInt32 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (int))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
+
+                return ToX<int> (bytes);
+            }
+
+            public static short ToInt16 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (short))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
+
+                return ToX<short> (bytes);
+            }
+
+            public static long ToInt64 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (long))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
+
+                return ToX<long> (bytes);
+            }
+
+            public static uint ToUInt32 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (uint))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
+
+                return ToX<uint> (bytes);
+            }
+
+            public static ushort ToUInt16 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (ushort))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
+
+                return ToX<ushort> (bytes);
+            }
+
+            public static ulong ToUInt64 (ReadOnlySpan<byte> bytes) {
+                if (bytes.Length <= sizeof (ulong))
+                    throw new ArgumentOutOfRangeException (nameof (bytes));
+
+                return ToX<ulong> (bytes);
+            }
+        }
+    }
+
+    internal static class Utils {
         internal static int Rehash (int hash) {
             const int a = 6;
             const int b = 13;
