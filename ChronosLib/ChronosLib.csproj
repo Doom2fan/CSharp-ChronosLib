@@ -39,16 +39,16 @@
 
   <ItemGroup>
     <PackageReference Include="Collections.Pooled" Version="2.0.0-preview.27" />
-    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.0.0-preview1" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.0.0" />
     <PackageReference Include="MurmurHash.Net" Version="0.0.2" />
     <PackageReference Include="NonCopyableAnalyzer" Version="0.7.0" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
-    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="TerraFX.Interop.Mimalloc" Version="1.6.0-beta2" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Nerdbank.GitVersioning" Version="3.4.255" />
+    <PackageReference Update="Nerdbank.GitVersioning" Version="3.6.65-alpha" />
   </ItemGroup>
 
 </Project>
