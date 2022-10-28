@@ -25,47 +25,114 @@ namespace ChronosLib {
                 return Unsafe.ReadUnaligned<T> (ref buffer [0]);
             }
 
+            private unsafe static void FromX<T> (T value, Span<byte> bytes) where T : unmanaged {
+                bytes = bytes [..sizeof (T)];
+
+                Unsafe.WriteUnaligned (ref bytes [0], value);
+
+                if (BitConverter.IsLittleEndian)
+                    bytes.Reverse ();
+            }
+
+            #region From bytes, signed
+
             public static int ToInt32 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (int))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (int))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<int> (bytes);
             }
 
             public static short ToInt16 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (short))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (short))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<short> (bytes);
             }
 
             public static long ToInt64 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (long))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (long))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<long> (bytes);
             }
 
+            #endregion
+
+            #region From bytes, unsigned
+
             public static uint ToUInt32 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (uint))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (uint))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<uint> (bytes);
             }
 
             public static ushort ToUInt16 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (ushort))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (ushort))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<ushort> (bytes);
             }
 
             public static ulong ToUInt64 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (ulong))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (ulong))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<ulong> (bytes);
             }
+
+            #endregion
+
+            #region To bytes, signed
+
+            public static void ToBytes (int val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (int))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (short val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (short))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (long val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (long))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            #endregion
+
+            #region To bytes, unsigned
+
+            public static void ToBytes (uint val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (uint))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (ushort val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (ushort))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (ulong val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (ulong))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            #endregion
         }
 
         public static class LittleEndian {
@@ -79,47 +146,114 @@ namespace ChronosLib {
                 return Unsafe.ReadUnaligned<T> (ref buffer [0]);
             }
 
+            private unsafe static void FromX<T> (T value, Span<byte> bytes) where T : unmanaged {
+                bytes = bytes [..sizeof (T)];
+
+                Unsafe.WriteUnaligned (ref bytes [0], value);
+
+                if (!BitConverter.IsLittleEndian)
+                    bytes.Reverse ();
+            }
+
+            #region From bytes, signed
+
             public static int ToInt32 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (int))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (int))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<int> (bytes);
             }
 
             public static short ToInt16 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (short))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (short))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<short> (bytes);
             }
 
             public static long ToInt64 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (long))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (long))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<long> (bytes);
             }
 
+            #endregion
+
+            #region From bytes, unsigned
+
             public static uint ToUInt32 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (uint))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (uint))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<uint> (bytes);
             }
 
             public static ushort ToUInt16 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (ushort))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (ushort))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<ushort> (bytes);
             }
 
             public static ulong ToUInt64 (ReadOnlySpan<byte> bytes) {
-                if (bytes.Length <= sizeof (ulong))
-                    throw new ArgumentOutOfRangeException (nameof (bytes));
+                if (bytes.Length < sizeof (ulong))
+                    throw new ArgumentException (null, nameof (bytes));
 
                 return ToX<ulong> (bytes);
             }
+
+            #endregion
+
+            #region To bytes, signed
+
+            public static void ToBytes (int val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (int))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (short val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (short))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (long val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (long))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            #endregion
+
+            #region To bytes, unsigned
+
+            public static void ToBytes (uint val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (uint))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (ushort val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (ushort))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            public static void ToBytes (ulong val, Span<byte> bytes) {
+                if (bytes.Length < sizeof (ulong))
+                    throw new ArgumentException (null, nameof (bytes));
+
+                FromX (val, bytes);
+            }
+
+            #endregion
         }
     }
 
