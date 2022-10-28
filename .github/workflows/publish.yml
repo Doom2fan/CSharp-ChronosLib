@@ -21,7 +21,7 @@ jobs:
 
       - name: Setup data
         id: datavars
-        run: echo "version=$(echo ${{ github.ref }} | cut -d'/' -f3 | tail -c +2)"
+        run: echo "version=$(echo ${{ github.ref }} | cut -d'/' -f3 | tail -c +2)" >> $GITHUB_OUTPUT
 
       - name: Get version, build, and publish
         run: |
