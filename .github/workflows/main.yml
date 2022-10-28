@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Get version, build, and pack
         run: |
           export NUGET_SOURCE=https://www.myget.org/F/pbeta-echelon/api/v2/package
