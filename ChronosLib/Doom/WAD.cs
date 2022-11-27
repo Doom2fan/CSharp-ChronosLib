@@ -53,27 +53,10 @@ namespace ChronosLib.Doom.WAD {
 
         #region ================== Instance methods
 
-        /// <summary>Reads the lump to a stream.</summary>
-        /// <returns>A stream containing the lump's data.</returns>
-        public Stream ReadLump () {
-            if (Source is null)
-                throw new WADException ("Missing Source on WADLump instance");
-            if (Source.IsDisposed)
-                throw new ObjectDisposedException ("WAD", "The lump's source WAD was disposed");
-            if (Source.WADStream is null)
-                throw new WADException ("The source WAD's stream was disposed");
-
-            byte [] buffer = new byte [Size];
-            Source.WADStream.Seek (FilePos, SeekOrigin.Begin);
-            Source.WADStream.Read (buffer, 0, Size);
-
-            return new MemoryStream (buffer);
-        }
-
         /// <summary>Reads the lump to a byte array.</summary>
         /// <param name="buffer">An array of bytes.</param>
         /// <returns>The total number of bytes read into the buffer.</returns>
-        public int ReadLump (byte [] buffer) {
+        public int ReadLump (Span<byte> buffer) {
             if (Source is null)
                 throw new WADException ("Missing Source on WADLump instance");
             if (Source.IsDisposed)
@@ -81,8 +64,11 @@ namespace ChronosLib.Doom.WAD {
             if (Source.WADStream is null)
                 throw new WADException ("The source WAD's stream was disposed");
 
+            if (buffer.Length > Size)
+                buffer = buffer [..Size];
+
             Source.WADStream.Seek (FilePos, SeekOrigin.Begin);
-            return Source.WADStream.Read (buffer, 0, Size);
+            return Source.WADStream.Read (buffer);
         }
 
         #endregion
@@ -183,11 +169,11 @@ namespace ChronosLib.Doom.WAD {
         /// <remarks>Unless loadIntoRAM is true, the stream will be held onto by the instance of the WAD class, and it'll dispose of the stream when it's disposed of.</remarks>
         public static WAD LoadWAD (Stream stream, bool loadIntoRAM = false) {
             if (stream is null)
-                throw new ArgumentNullException ("stream");
+                throw new ArgumentNullException (nameof (stream));
             if (!stream.CanRead)
-                throw new ArgumentException ("The stream cannot be read.", "stream");
+                throw new ArgumentException ("The stream cannot be read.", nameof (stream));
             if (!stream.CanSeek)
-                throw new ArgumentException ("The stream cannot be seeked.", "stream");
+                throw new ArgumentException ("The stream cannot be seeked.", nameof (stream));
 
             stream.Seek (0, SeekOrigin.Begin);
 
@@ -199,9 +185,9 @@ namespace ChronosLib.Doom.WAD {
             Span<char> id = stackalloc char [4];
             Encoding.ASCII.GetChars (headerBytes [..4], id);
 
-            var isIWAD = id.Equals ("IWAD");
+            var isIWAD = "IWAD".AsSpan ().Equals (id, StringComparison.Ordinal);
 
-            if (!isIWAD && !id.Equals ("PWAD"))
+            if (!isIWAD && !"PWAD".AsSpan ().Equals (id, StringComparison.Ordinal))
                 throw new WADLoadException ("Not a WAD file", WADLoadException.ErrorType.NotWAD);
 
             var numLumps = BitConversion.LittleEndian.ToInt32 (headerBytes [4..]);
@@ -275,18 +261,21 @@ namespace ChronosLib.Doom.WAD {
         #region ================== IDisposable support
 
         protected virtual void Dispose (bool disposing) {
-            if (!IsDisposed) {
-                if (disposing)
-                    GC.SuppressFinalize (this);
+            if (IsDisposed)
+                return;
 
-                WADStream?.Dispose ();
+            if (disposing)
+                GC.SuppressFinalize (this);
 
+            WADStream?.Dispose ();
+
+            if (!disposing) {
                 Lumps?.ClearList ();
-
-                Lumps = null;
-
-                IsDisposed = true;
             }
+
+            Lumps = null;
+
+            IsDisposed = true;
         }
 
         ~WAD () {
