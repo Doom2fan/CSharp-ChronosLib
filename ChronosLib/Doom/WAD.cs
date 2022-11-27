@@ -197,7 +197,7 @@ namespace ChronosLib.Doom.WAD {
                 throw new WADLoadException ("Invalid WAD file", WADLoadException.ErrorType.InvalidWAD);
 
             Span<char> id = stackalloc char [4];
-            Encoding.ASCII.GetChars (headerBytes, id);
+            Encoding.ASCII.GetChars (headerBytes [..4], id);
 
             var isIWAD = id.Equals ("IWAD");
 
