@@ -21,7 +21,7 @@ jobs:
 
       - name: Setup data
         id: datavars
-        run: echo "version=$(echo ${{ github.ref }} | cut -d'/' -f3 | tail -c +2)" >> $GITHUB_OUTPUT
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Get version, build, and publish
         run: |
@@ -30,7 +30,7 @@ jobs:
           export PROJ_DIR=ChronosLib
           export PROJ_NAME=ChronosLib.csproj
 
-          export GIT_BRANCH=${GITHUB_REF#refs/heads/}
+          export GIT_BRANCH=${GITHUB_REF#refs/tags/}
           export VERSION=${{ steps.datavars.outputs.version }}
 
           echo $VERSION $GIT_BRANCH
@@ -59,7 +59,7 @@ jobs:
           dotnet nuget push $PROJ_DIR/bin/Release/*.snupkg -k ${{ secrets.NUGET_API_KEY }} --source $NUGET_SYMBOLSSOURCE
       - uses: actions/upload-artifact@master
         with:
-          name: ChronosLib-${{ steps.gitversioning.NuGetPackageVersion }}
+          name: ChronosLib-${{ steps.datavars.outputs.version }}
           path: |
             ChronosLib/bin/Release/*.nupkg
             ChronosLib/bin/Release/*.snupkg
