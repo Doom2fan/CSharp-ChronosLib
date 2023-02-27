@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU;x64;x86</Platforms>
     <Version>2.0.0</Version>
     <Copyright>Copyright © 2018-2021 Chronos Ouroboros</Copyright>
@@ -39,12 +39,12 @@
 
   <ItemGroup>
     <PackageReference Include="Collections.Pooled" Version="2.0.0-preview.27" />
-    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.0.0" />
+    <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.1.0" />
     <PackageReference Include="MurmurHash.Net" Version="0.0.2" />
     <PackageReference Include="NonCopyableAnalyzer" Version="0.7.0" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
-    <PackageReference Include="TerraFX.Interop.Mimalloc" Version="1.6.0-beta2" />
+    <PackageReference Include="TerraFX.Interop.Mimalloc" Version="1.6.7" />
   </ItemGroup>
 
   <ItemGroup>
