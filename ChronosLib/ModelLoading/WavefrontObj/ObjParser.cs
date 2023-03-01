@@ -346,6 +346,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         #endregion
     }
 
+    [DebuggerDisplay ("{Message, nq}")]
     public class ObjParseException : Exception {
         #region ================== Constructors
 
@@ -358,12 +359,14 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         #endregion
     }
 
+    [DebuggerDisplay ("ObjFile (MTL name = {MaterialLibName}, Positions = {Positions.RealLength}, Normals = {Normals.RealLength}, TexCoords = {TexCoords.RealLength}, MeshGroups = {MeshGroups.RealLength})")]
     public class ObjFile : IDisposable {
         #region ================== Structs
 
         /// <summary>
         /// An OBJ file construct describing an individual mesh group.
         /// </summary>
+        [DebuggerDisplay ("Name = {Name}, Material = {Material}, Faces = {Faces.RealLength}")]
         public struct MeshGroup : IDisposable {
             #region ================== Instance fields
 
@@ -425,6 +428,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         /// <summary>
         /// An OBJ file construct describing the indices of vertex components.
         /// </summary>
+        [DebuggerDisplay ("Pos idx = {PositionIndex}, Normal idx = {NormalIndex}, Tex coord idx = {TexCoordIndex}")]
         public struct FaceVertex {
             #region ================== Instance fields
 
@@ -457,6 +461,7 @@ namespace ChronosLib.ModelLoading.WavefrontObj {
         /// <summary>
         /// An OBJ file construct describing the data of a vertex.
         /// </summary>
+        [DebuggerDisplay ("Position = <{Position.X}, {Position.Y}, {Position.Z}>, Normal = <{Normal.X}, {Normal.Y}, {Normal.Z}>, Tex coord = <{TexCoord.X}, {TexCoord.Y}>")]
         public struct FaceVertexData {
             #region ================== Instance fields
 

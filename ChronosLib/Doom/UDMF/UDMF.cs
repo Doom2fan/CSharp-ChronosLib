@@ -13,6 +13,7 @@ using System.Diagnostics;
 using ChronosLib.Doom.UDMF.Internal;
 
 namespace ChronosLib.Doom.UDMF {
+    [DebuggerDisplay ("Message = {Message}")]
     public class UDMFParseError {
         #region ================== Instance properties
 

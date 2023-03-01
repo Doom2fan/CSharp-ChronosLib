@@ -13,10 +13,12 @@ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using CommunityToolkit.HighPerformance;
 
 namespace ChronosLib.Pooled {
     [NonCopyable]
+    [DebuggerDisplay ("StructPooledList<T> (Count = {size}, Capacity = {items.Length])")]
     public struct StructPooledList<T> : IList<T>, IReadOnlyList<T>, IDisposable {
         #region ================== Constants
 

@@ -545,6 +545,7 @@ namespace ChronosLib.BMFont {
         #endregion
     }
 
+    [DebuggerDisplay ("{Message, nq}")]
     public class BMFontParseException : Exception {
         #region ================== Constructors
 
@@ -557,6 +558,7 @@ namespace ChronosLib.BMFont {
         #endregion
     }
 
+    [DebuggerDisplay ("BMFont (Pages = {PagesCount}, Chars = {charDataList.Count}, Kerning pairs = {kernPairsList.Length})")]
     public struct BMFontInfo {
         #region ================== Instance fields
 

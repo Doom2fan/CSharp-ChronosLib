@@ -16,10 +16,12 @@ using System.Text;
 using ChronosLib.Pooled;
 
 namespace ChronosLib.Doom.WAD {
+    [DebuggerDisplay ("{Message, nq}")]
     public class WADException : Exception {
         public WADException (string message, Exception innerException = null) : base (message, innerException) { }
     }
 
+    [DebuggerDisplay ("{Message, nq}")]
     public class WADLoadException : WADException {
         public enum ErrorType {
             /// <summary>The file contained in the stream is not a WAD.</summary>
@@ -34,6 +36,7 @@ namespace ChronosLib.Doom.WAD {
         public WADLoadException (string message, ErrorType err, Exception innerException = null) : base (message, innerException) { Error = err; }
     }
 
+    [DebuggerDisplay ("WADLump (Name = {Name}, Size = {Size})")]
     public struct WADLump {
         #region ================== Instance properties
 
@@ -74,6 +77,7 @@ namespace ChronosLib.Doom.WAD {
         #endregion
     }
 
+    [DebuggerDisplay ("WADLumpCollection (Count = {Count})")]
     public sealed class WADLumpCollection : ICollection<WADLump> {
         #region ================== Instance fields
 
@@ -129,6 +133,7 @@ namespace ChronosLib.Doom.WAD {
         #endregion
     }
 
+    [DebuggerDisplay ("WAD (IWAD = {IsIWAD}, Lump count = {Lumps.Count})")]
     public class WAD : IEnumerable<WADLump>, IDisposable {
         #region ================== Constants
 

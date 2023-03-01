@@ -11,11 +11,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using ChronosLib.Quake.MAP.Internal;
 
 namespace ChronosLib.Quake.MAP {
+    [DebuggerDisplay ("Message = {Message}")]
     public struct QuakeMAPParseError {
         #region ================== Instance properties
 
@@ -48,6 +50,7 @@ namespace ChronosLib.Quake.MAP {
         #endregion
     }
 
+    [DebuggerDisplay ("QuakeMAP (Entity count = {Entities.Count})")]
     public struct QuakeMAP {
         public IList<QuakeEntity> Entities { get; init; }
 
@@ -57,6 +60,7 @@ namespace ChronosLib.Quake.MAP {
         }
     }
 
+    [DebuggerDisplay ("QuakeEntity (KVP count = {KeyValuePairs.Count}, brush count = {Brushes.Length})")]
     public struct QuakeEntity {
         public IDictionary<string, string> KeyValuePairs { get; init; }
         public QuakeBrush [] Brushes { get; init; }
@@ -216,6 +220,7 @@ namespace ChronosLib.Quake.MAP {
         #endregion
     }
 
+    [DebuggerDisplay ("QuakeBrush (Plane count = {Planes.Length})")]
     public struct QuakeBrush {
         public QuakePlane [] Planes { get; init; }
     }

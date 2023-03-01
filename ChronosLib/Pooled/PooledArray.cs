@@ -14,6 +14,7 @@ using System.Buffers;
 using System.Diagnostics;
 
 namespace ChronosLib.Pooled {
+    [DebuggerDisplay ("PooledArray<T> (Count = {RealLength})")]
     public struct PooledArray<T> : IDisposable {
         public static PooledArray<T> Empty () => new (null, false, System.Array.Empty<T> (), 0);
 

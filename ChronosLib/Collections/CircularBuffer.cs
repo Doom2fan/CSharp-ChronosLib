@@ -22,12 +22,14 @@
  */
 
 using System;
+using System.Diagnostics;
 
 namespace ChronosLib.Collections {
     /// <summary>Circular buffer.
     /// When writing to a full buffer:
     /// PushBack -> removes this [0]/Front ()
     /// PushFront -> removes this [Size-1]/Back ()</summary>
+    [DebuggerDisplay ("CircularBuffer (Count = {Size}, Capacity = {Capacity})")]
     public class CircularBuffer<T> {
         private readonly T [] buffer;
 

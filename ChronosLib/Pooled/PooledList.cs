@@ -15,6 +15,7 @@ using System.Runtime.CompilerServices;
 using Collections.Pooled;
 
 namespace ChronosLib.Pooled {
+    [DebuggerDisplay ("CL_PooledList<T> (Count = {Count}, Capacity = {Capacity])")]
     public class CL_PooledList<T> : PooledList<T> {
         public CL_PooledList () : base () { }
         public CL_PooledList (int count) : base (count) { }

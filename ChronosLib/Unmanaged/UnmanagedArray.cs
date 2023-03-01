@@ -10,9 +10,11 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using static TerraFX.Interop.Mimalloc;
 
 namespace ChronosLib.Unmanaged {
+    [DebuggerDisplay ("UnmanagedArray<{typeof (T).Name, nq}> (Length = {Length})")]
     public unsafe struct UnmanagedArray<T> : IDisposable
         where T : unmanaged {
         public static UnmanagedArray<T> Empty () {
@@ -39,7 +41,7 @@ namespace ChronosLib.Unmanaged {
         public T* Pointer { get; private set; }
         public int Length { get; private set; }
 
-        public Span<T> Span => new Span<T> (Pointer, Length);
+        public Span<T> Span => new (Pointer, Length);
 
         #endregion
 
