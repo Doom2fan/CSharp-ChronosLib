@@ -13,11 +13,12 @@ using System;
 using ChronosLib.Quake.MAP;
 using Xunit;
 
-namespace UnitTests {
-    public class QuakeMAPTests {
-        [Fact]
-        public void TestQuake () {
-            string mapText = @"
+namespace UnitTests;
+
+public class QuakeMAPTests {
+    [Fact]
+    public void TestQuake () {
+        string mapText = @"
             // Game: Quake
             // Format: Standard
             // entity 0
@@ -35,14 +36,14 @@ namespace UnitTests {
             }
             ";
 
-            var parseResults = QuakeMAP.Parse (mapText.AsMemory ());
-            Assert.True (parseResults.Item1.HasValue);
-            Assert.Empty (parseResults.Item2);
-        }
+        var parseResults = QuakeMAP.Parse (mapText.AsMemory ());
+        Assert.True (parseResults.Item1.HasValue);
+        Assert.Empty (parseResults.Item2);
+    }
 
-        [Fact]
-        public void TestValve220 () {
-            string mapText = @"
+    [Fact]
+    public void TestValve220 () {
+        string mapText = @"
             // Game: Quake
             // Format: Valve
             // entity 0
@@ -61,9 +62,8 @@ namespace UnitTests {
             }
             ";
 
-            var parseResults = QuakeMAP.Parse (mapText.AsMemory ());
-            Assert.True (parseResults.Item1.HasValue);
-            Assert.Empty (parseResults.Item2);
-        }
+        var parseResults = QuakeMAP.Parse (mapText.AsMemory ());
+        Assert.True (parseResults.Item1.HasValue);
+        Assert.Empty (parseResults.Item2);
     }
 }

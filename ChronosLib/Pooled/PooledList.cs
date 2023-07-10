@@ -14,39 +14,39 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Collections.Pooled;
 
-namespace ChronosLib.Pooled {
-    [DebuggerDisplay ("CL_PooledList<T> (Count = {Count}, Capacity = {Capacity])")]
-    public class CL_PooledList<T> : PooledList<T> {
-        public CL_PooledList () : base () { }
-        public CL_PooledList (int count) : base (count) { }
+namespace ChronosLib.Pooled;
 
-        #region ================== IDisposable Support
+[DebuggerDisplay ("CL_PooledList<T> (Count = {Count}, Capacity = {Capacity])")]
+public class CL_PooledList<T> : PooledList<T> {
+    public CL_PooledList () : base () { }
+    public CL_PooledList (int count) : base (count) { }
 
-        public bool IsDisposed {
-            [MethodImpl (MethodImplOptions.AggressiveInlining)]
-            get;
-            [MethodImpl (MethodImplOptions.AggressiveInlining)]
-            set;
-        }
+    #region ================== IDisposable Support
 
-        ~CL_PooledList () {
-            if (!IsDisposed) {
-                Debug.Fail ($"An instance of PooledList<{typeof (T).FullName}> has not been disposed.");
-                Dispose (false);
-            }
-        }
-
-        protected override void Dispose (bool disposing) {
-            if (!IsDisposed) {
-                if (disposing)
-                    GC.SuppressFinalize (this);
-
-                base.Dispose (disposing);
-
-                IsDisposed = true;
-            }
-        }
-
-        #endregion
+    public bool IsDisposed {
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
+        get;
+        [MethodImpl (MethodImplOptions.AggressiveInlining)]
+        set;
     }
+
+    ~CL_PooledList () {
+        if (!IsDisposed) {
+            Debug.Fail ($"An instance of PooledList<{typeof (T).FullName}> has not been disposed.");
+            Dispose (false);
+        }
+    }
+
+    protected override void Dispose (bool disposing) {
+        if (!IsDisposed) {
+            if (disposing)
+                GC.SuppressFinalize (this);
+
+            base.Dispose (disposing);
+
+            IsDisposed = true;
+        }
+    }
+
+    #endregion
 }

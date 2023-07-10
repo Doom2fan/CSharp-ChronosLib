@@ -13,59 +13,59 @@ using System;
 using System.Diagnostics;
 using static TerraFX.Interop.Mimalloc;
 
-namespace ChronosLib.Unmanaged {
-    [DebuggerDisplay ("UnmanagedArray<{typeof (T).Name, nq}> (Length = {Length})")]
-    public unsafe struct UnmanagedArray<T> : IDisposable
-        where T : unmanaged {
-        public static UnmanagedArray<T> Empty () {
-            return new UnmanagedArray<T> {
-                Pointer = null,
-                Length = 0,
-            };
-        }
+namespace ChronosLib.Unmanaged;
 
-        public static UnmanagedArray<T> GetArray (int length) {
-            if (length == 0)
-                return Empty ();
-
-            var newArr = new UnmanagedArray<T> {
-                Pointer = (T*) mi_malloc ((nuint) (length * sizeof (T))),
-                Length = length,
-            };
-
-            return newArr;
-        }
-
-        #region ================== Instance properties
-
-        public T* Pointer { get; private set; }
-        public int Length { get; private set; }
-
-        public Span<T> Span => new (Pointer, Length);
-
-        #endregion
-
-        #region ================== Casts
-
-        public static implicit operator Span<T> (UnmanagedArray<T> array) => array.Span;
-        public static implicit operator ReadOnlySpan<T> (UnmanagedArray<T> array) => array.Span;
-
-        #endregion
-
-        #region ================== IDisposable support
-
-        private bool disposedValue;
-
-        public void Dispose () {
-            if (!disposedValue) {
-                mi_free (Pointer);
-                Length = 0;
-                Pointer = null;
-
-                disposedValue = true;
-            }
-        }
-
-        #endregion
+[DebuggerDisplay ("UnmanagedArray<{typeof (T).Name, nq}> (Length = {Length})")]
+public unsafe struct UnmanagedArray<T> : IDisposable
+    where T : unmanaged {
+    public static UnmanagedArray<T> Empty () {
+        return new UnmanagedArray<T> {
+            Pointer = null,
+            Length = 0,
+        };
     }
+
+    public static UnmanagedArray<T> GetArray (int length) {
+        if (length == 0)
+            return Empty ();
+
+        var newArr = new UnmanagedArray<T> {
+            Pointer = (T*) mi_malloc ((nuint) (length * sizeof (T))),
+            Length = length,
+        };
+
+        return newArr;
+    }
+
+    #region ================== Instance properties
+
+    public T* Pointer { get; private set; }
+    public int Length { get; private set; }
+
+    public Span<T> Span => new (Pointer, Length);
+
+    #endregion
+
+    #region ================== Casts
+
+    public static implicit operator Span<T> (UnmanagedArray<T> array) => array.Span;
+    public static implicit operator ReadOnlySpan<T> (UnmanagedArray<T> array) => array.Span;
+
+    #endregion
+
+    #region ================== IDisposable support
+
+    private bool disposedValue;
+
+    public void Dispose () {
+        if (!disposedValue) {
+            mi_free (Pointer);
+            Length = 0;
+            Pointer = null;
+
+            disposedValue = true;
+        }
+    }
+
+    #endregion
 }

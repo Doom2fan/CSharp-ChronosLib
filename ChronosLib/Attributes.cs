@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo ("UnitTests")]
 
-namespace ChronosLib {
-    [AttributeUsage (AttributeTargets.Struct)]
-    internal class NonCopyableAttribute : Attribute { }
-}
+namespace ChronosLib;
+
+[AttributeUsage (AttributeTargets.Struct)]
+internal class NonCopyableAttribute : Attribute { }

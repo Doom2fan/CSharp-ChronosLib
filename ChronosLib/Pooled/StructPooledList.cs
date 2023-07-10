@@ -14,509 +14,414 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using CommunityToolkit.HighPerformance;
 
-namespace ChronosLib.Pooled {
-    [NonCopyable]
-    [DebuggerDisplay ("StructPooledList<T> (Count = {size}, Capacity = {items.Length])")]
-    public struct StructPooledList<T> : IList<T>, IReadOnlyList<T>, IDisposable {
-        #region ================== Constants
+namespace ChronosLib.Pooled;
 
-        private const int maxArrayLength = 0x7FEFFFFF;
-        private const int defaultCapacity = 4;
-        private static readonly T [] emptyArray = Array.Empty<T> ();
+/// <summary>A struct-based pooled list, non-copyable for safety.
+/// Care should be taken when using it, as being a struct comes with quirks.</summary>
+/// <remarks>Structs cannot have destructors, so it'll "leak" pooled arrays if you forget to dispose it.
+/// </remarks>
+/// <typeparam name="T">The type of element the list contains.</typeparam>
+[NonCopyable]
+[DebuggerDisplay ("StructPooledList<T> (Count = {size}, Capacity = {items.Length])")]
+public struct StructPooledList<T> : IList<T>, IReadOnlyList<T>, IDisposable {
+    #region ================== Constants
 
-        #endregion
+    private const int maxArrayLength = 0x7FEFFFFF;
+    private const int defaultCapacity = 4;
+    private static readonly bool hasRefs = RuntimeHelpers.IsReferenceOrContainsReferences<T> ();
 
-        #region ================== Instance fields
+    #endregion
 
-        private ArrayPool<T> pool;
-        private object? syncRoot;
+    #region ================== Instance fields
 
-        private T [] items;
-        private int size;
-        private int version;
-        private readonly bool clearOnFree;
+    private ArrayPool<T> pool;
 
-        #endregion
+    private T [] items;
+    private int size;
+    private readonly bool clearOnFree;
 
-        #region ================== Constructors
+    #endregion
 
-        /// <summary>Used only for copying or moving the list.</summary>
-        private StructPooledList (ref StructPooledList<T> other, bool move) {
-            IsDisposed = false;
+    #region ================== Constructors
 
-            pool = other.pool;
-            clearOnFree = other.clearOnFree;
+    /// <summary>Used only for copying or moving the list.</summary>
+    private StructPooledList (ref StructPooledList<T> other, bool move) {
+        IsDisposed = false;
 
-            if (move) {
-                syncRoot = other.syncRoot;
+        pool = other.pool;
+        clearOnFree = other.clearOnFree;
 
-                items = other.items;
-                size = other.size;
-                version = other.version;
+        if (move) {
+            items = other.items;
+            size = other.size;
 
-                other.syncRoot = null;
-                other.InternalDispose ();
-            } else {
-                syncRoot = null;
+            other.InternalDispose ();
+        } else {
+            items = Array.Empty<T> ();
+            size = 0;
 
-                items = emptyArray;
-                size = 0;
-                version = 0;
+            AddRange (other.Span);
+        }
+    }
 
-                AddRange (other.Span);
-            }
+    public StructPooledList (CL_ClearMode clearMode) : this (clearMode, null) { }
+
+    public StructPooledList (CL_ClearMode clearMode, ArrayPool<T>? customPool)
+        : this () {
+        clearOnFree = clearMode == CL_ClearMode.Always || (clearMode == CL_ClearMode.Auto && hasRefs);
+        pool = customPool ?? ArrayPool<T>.Shared;
+        items = Array.Empty<T> ();
+    }
+
+    internal StructPooledList (CL_ClearMode clearMode, ArrayPool<T>? arrayPool, T [] array, int length)
+        : this (clearMode, arrayPool) {
+        items = array;
+        size = length;
+    }
+
+    #endregion
+
+    #region ================== Indexers
+
+    public T this [int idx] {
+        get {
+            if ((uint) idx >= (uint) size)
+                throw new IndexOutOfRangeException ();
+
+            return items [idx];
         }
 
-        public StructPooledList (CL_ClearMode clearMode) : this (clearMode, null) { }
+        set {
+            if ((uint) idx >= (uint) size)
+                throw new IndexOutOfRangeException ();
 
-        public StructPooledList (CL_ClearMode clearMode, ArrayPool<T>? customPool)
-            : this () {
-            clearOnFree = PooledUtils.ShouldClear<T> (clearMode);
-            pool = customPool ?? ArrayPool<T>.Shared;
-            items = emptyArray;
+            items [idx] = value;
         }
+    }
 
-        internal StructPooledList (CL_ClearMode clearMode, ArrayPool<T>? arrayPool, T [] array, int length)
-            : this (clearMode, arrayPool) {
-            items = array;
-            size = length;
-        }
+    #endregion
 
-        #endregion
+    #region ================== Instance properties
 
-        #region ================== Indexers
+    /// <inheritdoc/>
+    public int Capacity {
+        get => items.Length;
 
-        public T this [int idx] {
-            get {
-                if ((uint) idx >= (uint) size)
-                    throw new IndexOutOfRangeException ();
+        set {
+            if (value < size)
+                throw new ArgumentOutOfRangeException (null, "The specified capacity is lower than the list's size");
 
-                return items [idx];
-            }
+            if (value != items.Length) {
+                if (value > 0) {
+                    var newItems = pool.Rent (value);
 
-            set {
-                if ((uint) idx >= (uint) size)
-                    throw new IndexOutOfRangeException ();
+                    if (size > 0)
+                        Array.Copy (items, newItems, size);
 
-                version++;
-                items [idx] = value;
-            }
-        }
+                    ReturnArray ();
 
-        #endregion
-
-        #region ================== Instance properties
-
-        /// <inheritdoc/>
-        public int Capacity {
-            get => items.Length;
-
-            set {
-                if (value < size)
-                    throw new ArgumentOutOfRangeException (null, "The specified capacity is lower than the list's size");
-
-                if (value != items.Length) {
-                    if (value > 0) {
-                        var newItems = pool.Rent (value);
-
-                        if (size > 0)
-                            Array.Copy (items, newItems, size);
-
-                        ReturnArray ();
-
-                        items = newItems;
-                    } else {
-                        ReturnArray ();
-                        size = 0;
-                    }
+                    items = newItems;
+                } else {
+                    ReturnArray ();
+                    size = 0;
                 }
             }
         }
+    }
 
-        /// <inheritdoc/>
-        public int Count => size;
+    /// <inheritdoc/>
+    public readonly int Count => size;
 
-        public Span<T> Span {
-            get {
-                if (items == null)
-                    return emptyArray;
+    public Span<T> Span {
+        get {
+            if (items == null)
+                return Array.Empty<T> ();
 
-                return items.AsSpan (0, size);
-            }
+            return items.AsSpan (0, size);
         }
+    }
 
-        /// <summary>Returns the ClearMode behavior for the collection, denoting whether values are cleared from
-        /// internal arrays before returning them to the pool.</summary>
-        public CL_ClearMode ClearMode => clearOnFree ? CL_ClearMode.Always : CL_ClearMode.Never;
+    /// <summary>Returns the ClearMode behavior for the collection, denoting whether values are cleared from
+    /// internal arrays before returning them to the pool.</summary>
+    public readonly CL_ClearMode ClearMode => clearOnFree ? CL_ClearMode.Always : CL_ClearMode.Never;
 
-        #endregion
+    #endregion
 
-        #region ================== Instance methods
+    #region ================== Instance methods
 
-        private void ReturnArray () {
-            if (items.Length == 0)
-                return;
+    private void ReturnArray () {
+        if (items.Length == 0)
+            return;
 
+        // Clear the elements so that the gc can reclaim the references.
+        pool.Return (items, clearArray: clearOnFree);
+
+        items = Array.Empty<T> ();
+    }
+
+    public void EnsureCapacity (int min) {
+        if (items.Length < min) {
+            int newCapacity = items.Length == 0 ? defaultCapacity : items.Length * 2;
+            // Allow the list to grow to maximum possible capacity (~2G elements) before encountering overflow.
+            // Note that this check works even when _items.Length overflowed thanks to the (uint) cast
+
+            if ((uint) newCapacity > maxArrayLength)
+                newCapacity = maxArrayLength;
+            if (newCapacity < min)
+                newCapacity = min;
+
+            Capacity = newCapacity;
+        }
+    }
+
+    #region Item insertion
+
+    /// <inheritdoc/>
+    public void Add (T item) {
+        EnsureCapacity (size + 1);
+
+        items [size] = item;
+
+        size++;
+    }
+
+    /// <inheritdoc/>
+    public void Add (ref T item) {
+        EnsureCapacity (size + 1);
+
+        items [size] = item;
+
+        size++;
+    }
+
+    /// <summary>Adds an item multiple times.</summary>
+    /// <param name="item">The item to add.</param>
+    /// <param name="count">The number of times to add.</param>
+    public void Add (T item, int count) {
+        EnsureCapacity (size + count);
+
+        for (int i = 0; i < count; i++)
+            items [size + i] = item;
+
+        size += count;
+    }
+
+    /// <summary>Adds an item multiple times.</summary>
+    /// <param name="item">The item to add.</param>
+    /// <param name="count">The number of times to add.</param>
+    public void Add (ref T item, int count) {
+        EnsureCapacity (size + count);
+
+        for (int i = 0; i < count; i++)
+            items [size + i] = item;
+
+        size += count;
+    }
+
+    /// <inheritdoc/>
+    public void AddRange (ref StructPooledList<T> newItems) => AddRange (newItems.Span);
+
+    /// <inheritdoc/>
+    public void AddRange (ReadOnlySpan<T> newItems) {
+        int startPos = size;
+        EnsureCapacity (size + newItems.Length);
+
+        newItems.CopyTo (items.AsSpan (startPos, newItems.Length));
+
+        size += newItems.Length;
+    }
+
+    public Span<T> AddSpan (int count) {
+        EnsureCapacity (size + count);
+
+        var span = items.AsSpan (size, count);
+
+        size += count;
+
+        return span;
+    }
+
+    /// <inheritdoc/>
+    public void Insert (int index, T item) {
+        // Note that insertions at the end are legal.
+        if ((uint) index > (uint) size)
+            throw new ArgumentOutOfRangeException (nameof (index), "Index is out of range.");
+
+        if (size == items.Length)
+            EnsureCapacity (size + 1);
+        if (index < size)
+            Array.Copy (items, index, items, index + 1, size - index);
+
+        items [index] = item;
+        size++;
+    }
+
+    #endregion
+
+    #region Item removal
+
+    /// <inheritdoc/>
+    public void Clear () {
+        if (size > 0 && clearOnFree) {
             // Clear the elements so that the gc can reclaim the references.
-            pool.Return (items, clearArray: clearOnFree);
-
-            items = emptyArray;
+            Array.Clear (items, 0, size);
         }
 
-        public void EnsureCapacity (int min) {
-            if (items.Length < min) {
-                int newCapacity = items.Length == 0 ? defaultCapacity : items.Length * 2;
-                // Allow the list to grow to maximum possible capacity (~2G elements) before encountering overflow.
-                // Note that this check works even when _items.Length overflowed thanks to the (uint) cast
+        size = 0;
+    }
 
-                if ((uint) newCapacity > maxArrayLength)
-                    newCapacity = maxArrayLength;
-                if (newCapacity < min)
-                    newCapacity = min;
-
-                Capacity = newCapacity;
-            }
+    /// <inheritdoc/>
+    public bool Remove (T item) {
+        int index = IndexOf (item);
+        if (index >= 0) {
+            RemoveAt (index);
+            return true;
         }
 
-        #region Item insertion
+        return false;
+    }
 
-        /// <inheritdoc/>
-        public void Add (T item) {
-            EnsureCapacity (size + 1);
+    /// <inheritdoc/>
+    public void RemoveAt (int index) {
+        if ((uint) index >= (uint) size)
+            throw new ArgumentOutOfRangeException (nameof (index), "Index is out of range.");
 
-            items [size] = item;
+        size--;
+        if (index < size)
+            Array.Copy (items, index + 1, items, index, size - index);
 
-            version++;
-            size++;
+        if (clearOnFree) {
+            // Clear the removed element so that the gc can reclaim the reference.
+            items [size] = default!;
+        }
+    }
+
+    public void RemoveEnd (int count) {
+        if ((uint) count > (uint) size)
+            throw new ArgumentOutOfRangeException (nameof (count), "Count is out of range.");
+
+        if (clearOnFree) {
+            // Clear the removed elements so that the gc can reclaim the reference.
+            Array.Clear (items, size - count, count);
         }
 
-        /// <inheritdoc/>
-        public void Add (ref T item) {
-            EnsureCapacity (size + 1);
+        size -= count;
+    }
 
-            items [size] = item;
+    #endregion
 
-            version++;
-            size++;
-        }
+    #region Search
 
-        /// <summary>Adds an item multiple times.</summary>
-        /// <param name="item">The item to add.</param>
-        /// <param name="count">The number of times to add.</param>
-        public void Add (T item, int count) {
-            EnsureCapacity (size + count);
+    /// <inheritdoc/>
+    public readonly int IndexOf (T item) => Array.IndexOf (items, item, 0, size);
 
-            for (int i = 0; i < count; i++)
-                items [size + i] = item;
+    /// <inheritdoc/>
+    public readonly bool Contains (T item) => size != 0 && IndexOf (item) != -1;
 
-            version++;
-            size += count;
-        }
+    #endregion
 
-        /// <summary>Adds an item multiple times.</summary>
-        /// <param name="item">The item to add.</param>
-        /// <param name="count">The number of times to add.</param>
-        public void Add (ref T item, int count) {
-            EnsureCapacity (size + count);
+    #region Copying
 
-            for (int i = 0; i < count; i++)
-                items [size + i] = item;
+    /// <summary>Copies this list to the specified span.</summary>
+    /// <param name="span">The span to copy to.</param>
+    public void CopyTo (Span<T> span) {
+        if (span.Length < Count)
+            throw new ArgumentException ("Destination span is shorter than the list being copied.");
 
-            version++;
-            size += count;
-        }
+        Span.CopyTo (span);
+    }
 
-        /// <inheritdoc/>
-        public void AddRange (ref StructPooledList<T> newItems) => AddRange (newItems.Span);
+    /// <inheritdoc/>
+    public void CopyTo (T [] array, int arrayIndex) => Array.Copy (items, 0, array, arrayIndex, size);
 
-        /// <inheritdoc/>
-        public void AddRange (ReadOnlySpan<T> newItems) {
-            int startPos = size;
-            EnsureCapacity (size + newItems.Length);
+    #endregion
 
-            newItems.CopyTo (items.AsSpan (startPos, newItems.Length));
+    #region Enumeration
 
-            version++;
-            size += newItems.Length;
-        }
+    public Span<T>.Enumerator GetEnumerator () => Span.GetEnumerator ();
 
-        public Span<T> AddSpan (int count) {
-            EnsureCapacity (size + count);
+    #endregion
 
-            var span = items.AsSpan (size, count);
+    public T [] ToArray () {
+        if (size == 0)
+            return Array.Empty<T> ();
 
-            version++;
-            size += count;
+        var arr = new T [size];
+        CopyTo (arr, 0);
 
-            return span;
-        }
+        return arr;
+    }
 
-        /// <inheritdoc/>
-        public void Insert (int index, T item) {
-            // Note that insertions at the end are legal.
-            if ((uint) index > (uint) size)
-                throw new ArgumentOutOfRangeException (nameof (index), "Index is out of range.");
+    public PooledArray<T> ToPooledArray () {
+        if (size == 0)
+            return PooledArray<T>.Empty ();
 
-            if (size == items.Length)
-                EnsureCapacity (size + 1);
-            if (index < size)
-                Array.Copy (items, index, items, index + 1, size - index);
+        var arr = PooledArray<T>.GetArray (size);
+        CopyTo (arr.Array, 0);
 
-            items [index] = item;
-            size++;
-            version++;
-        }
+        return arr;
+    }
 
-        #endregion
+    public StructPooledList<T> Clone () => new StructPooledList<T> (ref this, false);
 
-        #region Item removal
+    public StructPooledList<T> Move () => new StructPooledList<T> (ref this, true);
 
-        /// <inheritdoc/>
-        public void Clear () {
-            version++;
+    public PooledArray<T> MoveToArray () {
+        var ret = new PooledArray<T> (pool, clearOnFree, items, size);
 
-            if (size > 0 && clearOnFree) {
-                // Clear the elements so that the gc can reclaim the references.
-                Array.Clear (items, 0, size);
-            }
+        InternalDispose ();
 
+        return ret;
+    }
+
+    public void Reinit () {
+        if (items != Array.Empty<T> ())
+            Dispose ();
+
+        IsDisposed = false;
+    }
+
+    #endregion
+
+    #region ================== Interface implementations
+
+    #region IEnumerable
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator () => throw new NotSupportedException ();
+    IEnumerator IEnumerable.GetEnumerator () => throw new NotSupportedException ();
+
+    #endregion
+
+    #region ICollection
+
+    bool ICollection<T>.IsReadOnly => false;
+
+    #endregion
+
+    #endregion
+
+    #region ================== IDisposable Support
+
+    public bool IsDisposed { get; private set; }
+
+    private void InternalDispose () {
+        items = Array.Empty<T> ();
+        size = 0;
+
+        IsDisposed = true;
+    }
+
+    public void Dispose () {
+        if (!IsDisposed) {
+            ReturnArray ();
             size = 0;
-        }
-
-        /// <inheritdoc/>
-        public bool Remove (T item) {
-            int index = IndexOf (item);
-            if (index >= 0) {
-                RemoveAt (index);
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public void RemoveAt (int index) {
-            if ((uint) index >= (uint) size)
-                throw new ArgumentOutOfRangeException (nameof (index), "Index is out of range.");
-
-            size--;
-            if (index < size)
-                Array.Copy (items, index + 1, items, index, size - index);
-            version++;
-
-            if (clearOnFree) {
-                // Clear the removed element so that the gc can reclaim the reference.
-                items [size] = default!;
-            }
-        }
-
-        public void RemoveEnd (int count) {
-            if ((uint) count > (uint) size)
-                throw new ArgumentOutOfRangeException (nameof (count), "Count is out of range.");
-
-            if (clearOnFree) {
-                // Clear the removed elements so that the gc can reclaim the reference.
-                Array.Clear (items, size - count, count);
-            }
-
-            size -= count;
-            version++;
-        }
-
-        #endregion
-
-        #region Search
-
-        /// <inheritdoc/>
-        public int IndexOf (T item)
-            => Array.IndexOf (items, item, 0, size);
-
-        /// <inheritdoc/>
-        public bool Contains (T item)
-            => size != 0 && IndexOf (item) != -1;
-
-        #endregion
-
-        #region Copying
-
-        /// <summary>Copies this list to the specified span.</summary>
-        /// <param name="span">The span to copy to.</param>
-        public void CopyTo (Span<T> span) {
-            if (span.Length < Count)
-                throw new ArgumentException ("Destination span is shorter than the list being copied.");
-
-            Span.CopyTo (span);
-        }
-
-        /// <inheritdoc/>
-        public void CopyTo (T [] array, int arrayIndex) {
-            Array.Copy (items, 0, array, arrayIndex, size);
-        }
-
-        #endregion
-
-        #region Enumeration
-
-        public Enumerator GetEnumerator () => new Enumerator (ref this);
-
-        #endregion
-
-        public T [] ToArray () {
-            if (size == 0)
-                return emptyArray;
-
-            var arr = new T [size];
-            CopyTo (arr, 0);
-
-            return arr;
-        }
-
-        public PooledArray<T> ToPooledArray () {
-            if (size == 0)
-                return PooledArray<T>.Empty ();
-
-            var arr = PooledArray<T>.GetArray (size);
-            CopyTo (arr.Array, 0);
-
-            return arr;
-        }
-
-        public StructPooledList<T> Clone () => new StructPooledList<T> (ref this, false);
-
-        public StructPooledList<T> Move () => new StructPooledList<T> (ref this, true);
-
-        public PooledArray<T> MoveToArray () {
-            var ret = new PooledArray<T> (pool, clearOnFree, items, size);
-
-            InternalDispose ();
-
-            return ret;
-        }
-
-        public void Reinit () {
-            if (items != emptyArray)
-                Dispose ();
-
-            IsDisposed = false;
-        }
-
-        #endregion
-
-        #region ================== Enumerator
-
-        public ref struct Enumerator {
-            #region ================== Instance fields
-
-            private readonly Ref<StructPooledList<T>> list;
-            private int index;
-            private readonly int version;
-            private T current;
-
-            #endregion
-
-            #region ================== Instance properties
-
-            public T Current {
-                get {
-                    if (index == 0 || index == list.Value.size + 1)
-                        throw new InvalidOperationException ("Invalid enumerator state: enumeration cannot proceed.");
-
-                    return current;
-                }
-            }
-
-            #endregion
-
-            #region ================== Constructors
-
-            internal Enumerator (ref StructPooledList<T> list) {
-                this.list = new Ref<StructPooledList<T>> (ref list);
-                index = 0;
-                version = list.version;
-                current = default!;
-            }
-
-            #endregion
-
-            #region ================== Instance methods
-
-            public bool MoveNext () {
-                var localList = list;
-
-                if (version == localList.Value.version && ((uint) index < (uint) localList.Value.size)) {
-                    current = localList.Value.items [index];
-                    index++;
-                    return true;
-                }
-
-                return MoveNextRare ();
-            }
-
-            private bool MoveNextRare () {
-                if (version != list.Value.version)
-                    throw new InvalidOperationException ("Collection was modified during enumeration.");
-
-                index = list.Value.size + 1;
-                current = default!;
-                return false;
-            }
-
-            public void Reset () {
-                if (version != list.Value.version)
-                    throw new InvalidOperationException ("Collection was modified during enumeration.");
-
-                index = 0;
-                current = default!;
-            }
-
-            public void Dispose () { }
-
-            #endregion
-        }
-
-        #endregion
-
-        #region ================== Interface implementations
-
-        #region IEnumerable
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator () => throw new NotSupportedException ();
-        IEnumerator IEnumerable.GetEnumerator () => throw new NotSupportedException ();
-
-        #endregion
-
-        #region ICollection
-
-        bool ICollection<T>.IsReadOnly => false;
-
-        #endregion
-
-        #endregion
-
-        #region ================== IDisposable Support
-
-        public bool IsDisposed { get; private set; }
-
-        private void InternalDispose () {
-            items = emptyArray;
-            size = 0;
-            version++;
 
             IsDisposed = true;
         }
-
-        public void Dispose () {
-            if (!IsDisposed) {
-                ReturnArray ();
-                size = 0;
-                version++;
-
-                IsDisposed = true;
-            }
-        }
-
-        #endregion
     }
+
+    #endregion
 }

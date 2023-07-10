@@ -9,334 +9,334 @@
 
 using System.Collections.Generic;
 
-namespace ChronosLib.Doom.UDMF {
-    public class UDMFVertex : IUDMFBlock {
-        #region ================== Instance properties
+namespace ChronosLib.Doom.UDMF;
 
-        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
-
-        [UDMFData ("x")]
-        public float X { get; set; }
-        [UDMFData ("y")]
-        public float Y { get; set; }
-
-        #endregion
-    }
-
-    public class UDMFLinedef : IUDMFBlock {
-        #region ================== Instance properties
-
-        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
-
-        [UDMFData ("id")]
-        public int Id { get; set; } = -1;
-
-        #region Vertices
-
-        [UDMFData ("v1")]
-        public int Vertex1 { get; set; }
-        [UDMFData ("v2")]
-        public int Vertex2 { get; set; }
+public class UDMFVertex : IUDMFBlock {
+    #region ================== Instance properties
 
-        #endregion
+    public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
-        #region Flags
+    [UDMFData ("x")]
+    public float X { get; set; }
+    [UDMFData ("y")]
+    public float Y { get; set; }
+
+    #endregion
+}
+
+public class UDMFLinedef : IUDMFBlock {
+    #region ================== Instance properties
+
+    public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
-        #region Physics
+    [UDMFData ("id")]
+    public int Id { get; set; } = -1;
 
-        [UDMFData ("blocking")]
-        public bool Blocking { get; set; } = false;
-        [UDMFData ("blockmonsters")]
-        public bool BlockMonsters { get; set; } = false;
-        [UDMFData ("blockfloaters")]
-        public bool BlockFloaters { get; set; } = false;
-        [UDMFData ("blocksound")]
-        public bool BlockSound { get; set; } = false;
-        [UDMFData ("jumpover")]
-        public bool JumpOverRailing { get; set; } = false;
+    #region Vertices
 
-        #endregion
+    [UDMFData ("v1")]
+    public int Vertex1 { get; set; }
+    [UDMFData ("v2")]
+    public int Vertex2 { get; set; }
 
-        #region Texture
+    #endregion
 
-        [UDMFData ("twosided")]
-        public bool TwoSided { get; set; } = false;
-        [UDMFData ("dontpegtop")]
-        public bool UpperUnpegged { get; set; } = false;
-        [UDMFData ("dontpegbottom")]
-        public bool LowerUnpegged { get; set; } = false;
+    #region Flags
 
-        #endregion
+    #region Physics
 
-        [UDMFData ("secret")]
-        public bool Secret { get; set; } = false;
-        [UDMFData ("dontdraw")]
-        public bool NotOnAutomap { get; set; } = false;
+    [UDMFData ("blocking")]
+    public bool Blocking { get; set; } = false;
+    [UDMFData ("blockmonsters")]
+    public bool BlockMonsters { get; set; } = false;
+    [UDMFData ("blockfloaters")]
+    public bool BlockFloaters { get; set; } = false;
+    [UDMFData ("blocksound")]
+    public bool BlockSound { get; set; } = false;
+    [UDMFData ("jumpover")]
+    public bool JumpOverRailing { get; set; } = false;
 
-        [UDMFData ("mapped")]
-        public bool Mapped { get; set; } = false;
-        [UDMFData ("passuse")]
-        public bool PassUse { get; set; } = false;
+    #endregion
 
-        [UDMFData ("translucent")]
-        public bool Translucent { get; set; } = false;
+    #region Texture
 
-        #endregion
+    [UDMFData ("twosided")]
+    public bool TwoSided { get; set; } = false;
+    [UDMFData ("dontpegtop")]
+    public bool UpperUnpegged { get; set; } = false;
+    [UDMFData ("dontpegbottom")]
+    public bool LowerUnpegged { get; set; } = false;
 
-        #region Action specials
+    #endregion
 
-        #region Flags
+    [UDMFData ("secret")]
+    public bool Secret { get; set; } = false;
+    [UDMFData ("dontdraw")]
+    public bool NotOnAutomap { get; set; } = false;
 
-        [UDMFData ("playercross")]
-        public bool Spec_PlayerCross { get; set; } = false;
-        [UDMFData ("playeruse")]
-        public bool Spec_PlayerUse { get; set; } = false;
-        [UDMFData ("monstercross")]
-        public bool Spec_MonsterCross { get; set; } = false;
-        [UDMFData ("monsteruse")]
-        public bool Spec_MonsterUse { get; set; } = false;
-        [UDMFData ("impact")]
-        public bool Spec_ImpactActivated { get; set; } = false;
-        [UDMFData ("playerpush")]
-        public bool Spec_PlayerPush { get; set; } = false;
-        [UDMFData ("monsterpush")]
-        public bool Spec_MonsterPush { get; set; } = false;
-        [UDMFData ("missilecross")]
-        public bool Spec_MissileCross { get; set; } = false;
-        [UDMFData ("repeatspecial")]
-        public bool Spec_RepeatableAction { get; set; } = false;
+    [UDMFData ("mapped")]
+    public bool Mapped { get; set; } = false;
+    [UDMFData ("passuse")]
+    public bool PassUse { get; set; } = false;
 
-        #endregion
+    [UDMFData ("translucent")]
+    public bool Translucent { get; set; } = false;
 
-        #region Special and arguments
+    #endregion
 
-        [UDMFData ("special")]
-        public int Special { get; set; } = 0;
-        [UDMFData ("arg0")]
-        public int Arg0 { get; set; } = 0;
-        [UDMFData ("arg1")]
-        public int Arg1 { get; set; } = 0;
-        [UDMFData ("arg2")]
-        public int Arg2 { get; set; } = 0;
-        [UDMFData ("arg3")]
-        public int Arg3 { get; set; } = 0;
-        [UDMFData ("arg4")]
-        public int Arg4 { get; set; } = 0;
+    #region Action specials
 
-        #endregion
+    #region Flags
 
-        #endregion
+    [UDMFData ("playercross")]
+    public bool Spec_PlayerCross { get; set; } = false;
+    [UDMFData ("playeruse")]
+    public bool Spec_PlayerUse { get; set; } = false;
+    [UDMFData ("monstercross")]
+    public bool Spec_MonsterCross { get; set; } = false;
+    [UDMFData ("monsteruse")]
+    public bool Spec_MonsterUse { get; set; } = false;
+    [UDMFData ("impact")]
+    public bool Spec_ImpactActivated { get; set; } = false;
+    [UDMFData ("playerpush")]
+    public bool Spec_PlayerPush { get; set; } = false;
+    [UDMFData ("monsterpush")]
+    public bool Spec_MonsterPush { get; set; } = false;
+    [UDMFData ("missilecross")]
+    public bool Spec_MissileCross { get; set; } = false;
+    [UDMFData ("repeatspecial")]
+    public bool Spec_RepeatableAction { get; set; } = false;
 
-        #region Sidedefs
+    #endregion
 
-        [UDMFData ("sidefront")]
-        public int SideFront { get; set; }
-        [UDMFData ("sideback")]
-        public int SideBack { get; set; } = -1;
+    #region Special and arguments
 
-        #endregion
+    [UDMFData ("special")]
+    public int Special { get; set; } = 0;
+    [UDMFData ("arg0")]
+    public int Arg0 { get; set; } = 0;
+    [UDMFData ("arg1")]
+    public int Arg1 { get; set; } = 0;
+    [UDMFData ("arg2")]
+    public int Arg2 { get; set; } = 0;
+    [UDMFData ("arg3")]
+    public int Arg3 { get; set; } = 0;
+    [UDMFData ("arg4")]
+    public int Arg4 { get; set; } = 0;
 
-        [UDMFData ("comment")]
-        public string Comment { get; set; } = "";
+    #endregion
 
-        #endregion
-    }
+    #endregion
 
-    public class UDMFSidedef : IUDMFBlock {
-        #region ================== Instance properties
+    #region Sidedefs
 
-        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
+    [UDMFData ("sidefront")]
+    public int SideFront { get; set; }
+    [UDMFData ("sideback")]
+    public int SideBack { get; set; } = -1;
 
-        #region Offsets
+    #endregion
 
-        [UDMFData ("offsetx")]
-        public float OffsetX { get; set; } = 0;
-        [UDMFData ("offsety")]
-        public float OffsetY { get; set; } = 0;
+    [UDMFData ("comment")]
+    public string Comment { get; set; } = "";
 
-        #endregion
+    #endregion
+}
 
-        #region Textures
+public class UDMFSidedef : IUDMFBlock {
+    #region ================== Instance properties
 
-        [UDMFData ("texturetop")]
-        public string UpperTexture { get; set; } = "-";
-        [UDMFData ("texturemiddle")]
-        public string MiddleTexture { get; set; } = "-";
-        [UDMFData ("texturebottom")]
-        public string BottomTexture { get; set; } = "-";
+    public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
-        #endregion
+    #region Offsets
 
-        [UDMFData ("sector")]
-        public int Sector { get; set; } = 0;
+    [UDMFData ("offsetx")]
+    public float OffsetX { get; set; } = 0;
+    [UDMFData ("offsety")]
+    public float OffsetY { get; set; } = 0;
 
-        [UDMFData ("comment")]
-        public string Comment { get; set; } = "";
+    #endregion
 
-        #endregion
-    }
+    #region Textures
 
-    public class UDMFSector : IUDMFBlock {
-        #region ================== Instance properties
+    [UDMFData ("texturetop")]
+    public string UpperTexture { get; set; } = "-";
+    [UDMFData ("texturemiddle")]
+    public string MiddleTexture { get; set; } = "-";
+    [UDMFData ("texturebottom")]
+    public string BottomTexture { get; set; } = "-";
 
-        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
+    #endregion
 
-        #region Heights
+    [UDMFData ("sector")]
+    public int Sector { get; set; } = 0;
 
-        [UDMFData ("heightfloor")]
-        public float FloorHeight { get; set; } = 0;
-        [UDMFData ("heightceiling")]
-        public float CeilHeight { get; set; } = 0;
+    [UDMFData ("comment")]
+    public string Comment { get; set; } = "";
 
-        #endregion
+    #endregion
+}
 
-        #region Textures
+public class UDMFSector : IUDMFBlock {
+    #region ================== Instance properties
 
-        [UDMFData ("texturefloor")]
-        public string FloorTexture { get; set; }
-        [UDMFData ("textureceiling")]
-        public string CeilTexture { get; set; }
+    public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
-        #endregion
+    #region Heights
 
-        [UDMFData ("lightlevel")]
-        public int LightLevel { get; set; } = 160;
+    [UDMFData ("heightfloor")]
+    public float FloorHeight { get; set; } = 0;
+    [UDMFData ("heightceiling")]
+    public float CeilHeight { get; set; } = 0;
 
-        [UDMFData ("special")]
-        public int Special { get; set; } = 0;
+    #endregion
 
-        [UDMFData ("id")]
-        public int Id { get; set; } = 0;
+    #region Textures
 
-        [UDMFData ("comment")]
-        public string Comment { get; set; } = "";
+    [UDMFData ("texturefloor")]
+    public string FloorTexture { get; set; }
+    [UDMFData ("textureceiling")]
+    public string CeilTexture { get; set; }
 
-        #endregion
-    }
+    #endregion
 
-    public class UDMFThing : IUDMFBlock {
-        #region ================== Instance properties
+    [UDMFData ("lightlevel")]
+    public int LightLevel { get; set; } = 160;
 
-        public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
+    [UDMFData ("special")]
+    public int Special { get; set; } = 0;
 
-        [UDMFData ("id")]
-        public int Id { get; set; } = 0;
+    [UDMFData ("id")]
+    public int Id { get; set; } = 0;
 
-        #region Coordinates
+    [UDMFData ("comment")]
+    public string Comment { get; set; } = "";
 
-        [UDMFData ("x")]
-        public float X { get; set; }
-        [UDMFData ("y")]
-        public float Y { get; set; }
+    #endregion
+}
 
-        [UDMFData ("height")]
-        public float Height { get; set; } = 0;
+public class UDMFThing : IUDMFBlock {
+    #region ================== Instance properties
 
-        #endregion
+    public Dictionary<string, UDMFUnknownAssignment> UnknownAssignments { get; set; }
 
-        [UDMFData ("angle")]
-        public int Angle { get; set; } = 0;
+    [UDMFData ("id")]
+    public int Id { get; set; } = 0;
 
-        [UDMFData ("type")]
-        public int Type { get; set; }
+    #region Coordinates
 
-        #region Flags
+    [UDMFData ("x")]
+    public float X { get; set; }
+    [UDMFData ("y")]
+    public float Y { get; set; }
 
-        #region Spawn flags
+    [UDMFData ("height")]
+    public float Height { get; set; } = 0;
 
-        [UDMFData ("skill1")]
-        public bool Skill1 { get; set; } = false;
-        [UDMFData ("skill2")]
-        public bool Skill2 { get; set; } = false;
-        [UDMFData ("skill3")]
-        public bool Skill3 { get; set; } = false;
-        [UDMFData ("skill4")]
-        public bool Skill4 { get; set; } = false;
-        [UDMFData ("skill5")]
-        public bool Skill5 { get; set; } = false;
+    #endregion
 
-        [UDMFData ("single")]
-        public bool SpawnSingleplayer { get; set; } = false;
-        [UDMFData ("dm")]
-        public bool SpawnDeathmatch { get; set; } = false;
-        [UDMFData ("coop")]
-        public bool SpawnCooperative { get; set; } = false;
+    [UDMFData ("angle")]
+    public int Angle { get; set; } = 0;
 
-        [UDMFData ("class1")]
-        public bool Class1 { get; set; } = false;
-        [UDMFData ("class2")]
-        public bool Class2 { get; set; } = false;
-        [UDMFData ("class3")]
-        public bool Class3 { get; set; } = false;
+    [UDMFData ("type")]
+    public int Type { get; set; }
 
-        #endregion
+    #region Flags
 
-        #region Monster AI
+    #region Spawn flags
 
-        [UDMFData ("dormant")]
-        public bool Dormant { get; set; } = false;
-        [UDMFData ("ambush")]
-        public bool Ambush { get; set; } = false;
-        [UDMFData ("standing")]
-        public bool Standing { get; set; } = false;
-        [UDMFData ("friend")]
-        public bool Friendly { get; set; } = false;
-        [UDMFData ("strifeally")]
-        public bool StrifeAlly { get; set; } = false;
+    [UDMFData ("skill1")]
+    public bool Skill1 { get; set; } = false;
+    [UDMFData ("skill2")]
+    public bool Skill2 { get; set; } = false;
+    [UDMFData ("skill3")]
+    public bool Skill3 { get; set; } = false;
+    [UDMFData ("skill4")]
+    public bool Skill4 { get; set; } = false;
+    [UDMFData ("skill5")]
+    public bool Skill5 { get; set; } = false;
 
-        #endregion
+    [UDMFData ("single")]
+    public bool SpawnSingleplayer { get; set; } = false;
+    [UDMFData ("dm")]
+    public bool SpawnDeathmatch { get; set; } = false;
+    [UDMFData ("coop")]
+    public bool SpawnCooperative { get; set; } = false;
 
-        #region Visibility
+    [UDMFData ("class1")]
+    public bool Class1 { get; set; } = false;
+    [UDMFData ("class2")]
+    public bool Class2 { get; set; } = false;
+    [UDMFData ("class3")]
+    public bool Class3 { get; set; } = false;
 
-        [UDMFData ("translucent")]
-        public bool Translucent { get; set; } = false;
-        [UDMFData ("invisible")]
-        public bool Invisible { get; set; } = false;
+    #endregion
 
-        #endregion
+    #region Monster AI
 
-        #endregion
+    [UDMFData ("dormant")]
+    public bool Dormant { get; set; } = false;
+    [UDMFData ("ambush")]
+    public bool Ambush { get; set; } = false;
+    [UDMFData ("standing")]
+    public bool Standing { get; set; } = false;
+    [UDMFData ("friend")]
+    public bool Friendly { get; set; } = false;
+    [UDMFData ("strifeally")]
+    public bool StrifeAlly { get; set; } = false;
 
-        #region Action special
+    #endregion
 
-        [UDMFData ("special")]
-        public int Special { get; set; } = 0;
-        [UDMFData ("arg0")]
-        public int Arg0 { get; set; } = 0;
-        [UDMFData ("arg1")]
-        public int Arg1 { get; set; } = 0;
-        [UDMFData ("arg2")]
-        public int Arg2 { get; set; } = 0;
-        [UDMFData ("arg3")]
-        public int Arg3 { get; set; } = 0;
-        [UDMFData ("arg4")]
-        public int Arg4 { get; set; } = 0;
+    #region Visibility
 
-        #endregion
+    [UDMFData ("translucent")]
+    public bool Translucent { get; set; } = false;
+    [UDMFData ("invisible")]
+    public bool Invisible { get; set; } = false;
 
-        [UDMFData ("comment")]
-        public string Comment { get; set; } = "";
+    #endregion
 
-        #endregion
-    }
+    #endregion
 
-    public class UDMFParsedMapDataStandard : UDMFParsedMapData {
-        #region ================== Instance properties
+    #region Action special
 
-        [UDMFData ("namespace")]
-        public string Namespace { get; set; }
+    [UDMFData ("special")]
+    public int Special { get; set; } = 0;
+    [UDMFData ("arg0")]
+    public int Arg0 { get; set; } = 0;
+    [UDMFData ("arg1")]
+    public int Arg1 { get; set; } = 0;
+    [UDMFData ("arg2")]
+    public int Arg2 { get; set; } = 0;
+    [UDMFData ("arg3")]
+    public int Arg3 { get; set; } = 0;
+    [UDMFData ("arg4")]
+    public int Arg4 { get; set; } = 0;
 
-        [UDMFData ("vertex")]
-        public UDMFBlockList<UDMFVertex> Vertices { get; set; }
-        [UDMFData ("linedef")]
-        public UDMFBlockList<UDMFLinedef> Linedefs { get; set; }
-        [UDMFData ("sidedef")]
-        public UDMFBlockList<UDMFSidedef> Sidedefs { get; set; }
-        [UDMFData ("sector")]
-        public UDMFBlockList<UDMFSector> Sectors { get; set; }
-        [UDMFData ("thing")]
-        public UDMFBlockList<UDMFThing> Things { get; set; }
+    #endregion
 
-        #endregion
-    }
+    [UDMFData ("comment")]
+    public string Comment { get; set; } = "";
+
+    #endregion
+}
+
+public class UDMFParsedMapDataStandard : UDMFParsedMapData {
+    #region ================== Instance properties
+
+    [UDMFData ("namespace")]
+    public string Namespace { get; set; }
+
+    [UDMFData ("vertex")]
+    public UDMFBlockList<UDMFVertex> Vertices { get; set; }
+    [UDMFData ("linedef")]
+    public UDMFBlockList<UDMFLinedef> Linedefs { get; set; }
+    [UDMFData ("sidedef")]
+    public UDMFBlockList<UDMFSidedef> Sidedefs { get; set; }
+    [UDMFData ("sector")]
+    public UDMFBlockList<UDMFSector> Sectors { get; set; }
+    [UDMFData ("thing")]
+    public UDMFBlockList<UDMFThing> Things { get; set; }
+
+    #endregion
 }

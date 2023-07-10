@@ -7,47 +7,47 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-namespace ChronosLib.Doom.UDMF.Standards {
-    public class UDMFZDoomVertex : UDMFVertex {
-        #region ================== Instance properties
+namespace ChronosLib.Doom.UDMF.Standards;
 
-        [UDMFData ("zfloor")]
-        public float ZFloor { get; set; }
-        [UDMFData ("zceiling")]
-        public float ZCeil { get; set; }
+public class UDMFZDoomVertex : UDMFVertex {
+    #region ================== Instance properties
 
-        #endregion
-    }
+    [UDMFData ("zfloor")]
+    public float ZFloor { get; set; }
+    [UDMFData ("zceiling")]
+    public float ZCeil { get; set; }
 
-    public class UDMFZDoomLinedef : UDMFLinedef {
-    }
+    #endregion
+}
 
-    public class UDMFZDoomSidedef : UDMFSidedef {
-    }
+public class UDMFZDoomLinedef : UDMFLinedef {
+}
 
-    public class UDMFZDoomSector : UDMFSector {
-    }
+public class UDMFZDoomSidedef : UDMFSidedef {
+}
 
-    public class UDMFZDoomThing : UDMFThing {
-    }
+public class UDMFZDoomSector : UDMFSector {
+}
 
-    public class UDMFParsedMapDataZDoom : UDMFParsedMapData {
-        #region ================== Instance properties
+public class UDMFZDoomThing : UDMFThing {
+}
 
-        [UDMFData ("namespace")]
-        public string Namespace { get; set; }
+public class UDMFParsedMapDataZDoom : UDMFParsedMapData {
+    #region ================== Instance properties
 
-        [UDMFData ("vertex")]
-        public UDMFBlockList<UDMFZDoomVertex> Vertices { get; set; }
-        [UDMFData ("linedef")]
-        public UDMFBlockList<UDMFZDoomLinedef> Linedefs { get; set; }
-        [UDMFData ("sidedef")]
-        public UDMFBlockList<UDMFZDoomSidedef> Sidedefs { get; set; }
-        [UDMFData ("sector")]
-        public UDMFBlockList<UDMFZDoomSector> Sectors { get; set; }
-        [UDMFData ("thing")]
-        public UDMFBlockList<UDMFZDoomThing> Things { get; set; }
+    [UDMFData ("namespace")]
+    public string Namespace { get; set; }
 
-        #endregion
-    }
+    [UDMFData ("vertex")]
+    public UDMFBlockList<UDMFZDoomVertex> Vertices { get; set; }
+    [UDMFData ("linedef")]
+    public UDMFBlockList<UDMFZDoomLinedef> Linedefs { get; set; }
+    [UDMFData ("sidedef")]
+    public UDMFBlockList<UDMFZDoomSidedef> Sidedefs { get; set; }
+    [UDMFData ("sector")]
+    public UDMFBlockList<UDMFZDoomSector> Sectors { get; set; }
+    [UDMFData ("thing")]
+    public UDMFBlockList<UDMFZDoomThing> Things { get; set; }
+
+    #endregion
 }

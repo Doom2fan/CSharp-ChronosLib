@@ -12,26 +12,26 @@
 using System;
 using System.Collections.Generic;
 
-namespace ChronosLib {
-    public static class StaticDisposables {
-        private static List<IDisposable> disposables = new List<IDisposable> ();
-        private static List<Action> disposeFunctions = new List<Action> ();
+namespace ChronosLib;
 
-        public static void AddDisposable (IDisposable? obj) {
-            if (obj is null)
-                return;
+public static class StaticDisposables {
+    private static List<IDisposable> disposables = new List<IDisposable> ();
+    private static List<Action> disposeFunctions = new List<Action> ();
 
-            disposables.Add (obj);
-        }
+    public static void AddDisposable (IDisposable? obj) {
+        if (obj is null)
+            return;
 
-        public static void AddDisposable (Action func) => disposeFunctions.Add (func);
+        disposables.Add (obj);
+    }
 
-        public static void Dispose () {
-            foreach (var obj in disposables)
-                obj?.Dispose ();
+    public static void AddDisposable (Action func) => disposeFunctions.Add (func);
 
-            foreach (var func in disposeFunctions)
-                func ();
-        }
+    public static void Dispose () {
+        foreach (var obj in disposables)
+            obj?.Dispose ();
+
+        foreach (var func in disposeFunctions)
+            func ();
     }
 }

@@ -13,17 +13,17 @@ using System;
 using ChronosLib;
 using Xunit;
 
-namespace UnitTests {
-    public class UtilsTests {
-        //[Fact]
-        public void TestSpanSplit () {
-            var mapText = "1 2   3".AsSpan ();
+namespace UnitTests;
 
-            using var parseResults = Utils.SplitSpan (mapText, " ");
-            Assert.Equal (3, parseResults.RealLength);
-            Assert.True (mapText [parseResults.Span [0]].Equals ("1", StringComparison.OrdinalIgnoreCase));
-            Assert.True (mapText [parseResults.Span [1]].Equals ("2", StringComparison.OrdinalIgnoreCase));
-            Assert.True (mapText [parseResults.Span [2]].Equals ("3", StringComparison.OrdinalIgnoreCase));
-        }
+public class UtilsTests {
+    //[Fact]
+    public void TestSpanSplit () {
+        var mapText = "1 2   3".AsSpan ();
+
+        using var parseResults = Utils.SplitSpan (mapText, " ");
+        Assert.Equal (3, parseResults.Length);
+        Assert.True (mapText [parseResults.Span [0]].Equals ("1", StringComparison.OrdinalIgnoreCase));
+        Assert.True (mapText [parseResults.Span [1]].Equals ("2", StringComparison.OrdinalIgnoreCase));
+        Assert.True (mapText [parseResults.Span [2]].Equals ("3", StringComparison.OrdinalIgnoreCase));
     }
 }

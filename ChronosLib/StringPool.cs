@@ -13,52 +13,52 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using MurmurHash.Net;
 
-namespace ChronosLib.StringPooling {
-    public class StringPool {
-        #region ================== Constants
+namespace ChronosLib.StringPooling;
 
-        public const StringComparison ComparisonMode = StringComparison.InvariantCultureIgnoreCase;
-        public readonly CultureInfo UsedCulture = CultureInfo.InvariantCulture;
+public class StringPool {
+    #region ================== Constants
 
-        #endregion
+    public const StringComparison ComparisonMode = StringComparison.InvariantCultureIgnoreCase;
+    public readonly CultureInfo UsedCulture = CultureInfo.InvariantCulture;
 
-        #region ================== Instance fields
+    #endregion
 
-        protected List<(string text, uint hash)> stringTable;
+    #region ================== Instance fields
 
-        #endregion
+    protected List<(string text, uint hash)> stringTable;
 
-        #region ================== Constructors
+    #endregion
 
-        public StringPool () {
-            stringTable = new List<(string text, uint hash)> ();
-        }
+    #region ================== Constructors
 
-        #endregion
-
-        #region ================== Instance methods
-
-        public string GetOrCreate (ReadOnlySpan<char> text) {
-            Span<char> textLower = stackalloc char [text.Length];
-            text.ToLower (textLower, UsedCulture);
-
-            var textBytes = MemoryMarshal.Cast<char, byte> (textLower);
-            uint textHash = MurmurHash3.Hash32 (textBytes, 0);
-
-            foreach (var str in stringTable) {
-                if (str.hash == textHash && str.text.AsSpan ().Equals (textLower, ComparisonMode))
-                    return str.text;
-            }
-
-            var newStr = new string (textLower);
-            stringTable.Add ((newStr, textHash));
-            return newStr;
-        }
-
-        public void Clear () {
-            stringTable.Clear ();
-        }
-
-        #endregion
+    public StringPool () {
+        stringTable = new List<(string text, uint hash)> ();
     }
+
+    #endregion
+
+    #region ================== Instance methods
+
+    public string GetOrCreate (ReadOnlySpan<char> text) {
+        Span<char> textLower = stackalloc char [text.Length];
+        text.ToLower (textLower, UsedCulture);
+
+        var textBytes = MemoryMarshal.Cast<char, byte> (textLower);
+        uint textHash = MurmurHash3.Hash32 (textBytes, 0);
+
+        foreach (var str in stringTable) {
+            if (str.hash == textHash && str.text.AsSpan ().Equals (textLower, ComparisonMode))
+                return str.text;
+        }
+
+        var newStr = new string (textLower);
+        stringTable.Add ((newStr, textHash));
+        return newStr;
+    }
+
+    public void Clear () {
+        stringTable.Clear ();
+    }
+
+    #endregion
 }
